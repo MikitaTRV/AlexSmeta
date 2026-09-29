@@ -1,6 +1,12 @@
 const STORAGE_KEY = "alexsmeta.estimates.v3";
-const SITE_VERSION = "0.1.0";
+const SITE_VERSION = "0.1.1";
 const PAGES = ["works", "materials", "payments"];
+const DEFAULT_CURRENCY = "руб.";
+
+function resolveCurrency(value) {
+  if (!value || value === "$" || value === "USD") return DEFAULT_CURRENCY;
+  return value;
+}
 
 /** Высота контента одной страницы A4 при ширине 720px (подбирается под html2pdf) */
 const PDF_PAGE_HEIGHT_PX = 940;
@@ -113,7 +119,7 @@ function normalizeEstimate(e) {
     name: e?.name ?? "Без названия",
     customer: e?.customer ?? "",
     executor: e?.executor ?? "",
-    currency: e?.currency ?? "$",
+    currency: resolveCurrency(e?.currency),
     updatedAt: e?.updatedAt ?? Date.now(),
     items: items.length ? items : [makeEmptyItem()],
     materials: materials.length ? materials : [makeEmptyMaterial()],
@@ -154,7 +160,7 @@ function migrateLegacyIfNeeded() {
           name: e.name ?? "Без названия",
           customer: "",
           executor: "",
-          currency: e.currency ?? "$",
+          currency: resolveCurrency(e.currency),
           updatedAt: now,
           items: Array.isArray(e.items)
             ? e.items.map((it) => ({
@@ -182,7 +188,7 @@ function makeEmptyEstimate(name) {
     name,
     customer: "",
     executor: "",
-    currency: "$",
+    currency: DEFAULT_CURRENCY,
     updatedAt: Date.now(),
     items: [makeEmptyItem()],
     materials: [makeEmptyMaterial()],
@@ -416,7 +422,7 @@ function render(state, ui) {
   });
 
   const total = computeTotal(current);
-  const cur = current.currency ?? "$";
+  const cur = current.currency ?? DEFAULT_CURRENCY;
   footer.innerHTML = `
     <div class="total-line">
       <span>Итого:</span>
@@ -571,7 +577,7 @@ function buildExportHtml(estimate) {
   });
 
   const total = computeTotal(estimate);
-  const currency = estimate.currency ?? "$";
+  const currency = estimate.currency ?? DEFAULT_CURRENCY;
   const title = estimate.name ?? "Смета";
   const customer = estimate.customer ?? "";
   const executor = estimate.executor ?? "";
@@ -749,7 +755,7 @@ function buildExportMaterialsTableHtml(estimate) {
 }
 
 function buildExportPaymentsTableHtml(estimate) {
-  const currency = estimate.currency ?? "$";
+  const currency = estimate.currency ?? DEFAULT_CURRENCY;
   const rows = (estimate.paymentStages ?? [])
     .map((it, idx) => {
       const amount = computeStageAmount(estimate, it.percent);
@@ -790,7 +796,7 @@ function buildExportPaymentsTableHtml(estimate) {
 
 function buildExportFooterHtml(estimate) {
   const total = computeTotal(estimate);
-  const currency = estimate.currency ?? "$";
+  const currency = estimate.currency ?? DEFAULT_CURRENCY;
   const customer = estimate.customer ?? "";
   const executor = estimate.executor ?? "";
   return `
@@ -1123,7 +1129,7 @@ function main() {
     const sumEl = document.querySelector(`[data-sum="${CSS.escape(itemId)}"]`);
     if (sumEl) sumEl.textContent = formatDisplayNumber(computeRowSum(item));
     const footer = document.querySelector('[data-slot="editor-footer"]');
-    const cur = draft.currency ?? "$";
+    const cur = draft.currency ?? DEFAULT_CURRENCY;
     const total = computeTotal(draft);
     if (footer) {
       footer.innerHTML = `
@@ -1137,7 +1143,7 @@ function main() {
   }
 
   function updatePaymentAmountsInDom(draft) {
-    const cur = draft.currency ?? "$";
+    const cur = draft.currency ?? DEFAULT_CURRENCY;
     (draft.paymentStages ?? []).forEach((st) => {
       const el = document.querySelector(`[data-stage-sum="${CSS.escape(st.id)}"]`);
       if (el) el.textContent = formatDisplayNumber(computeStageAmount(draft, st.percent));
