@@ -1,0 +1,1017 @@
+:root {
+  --bg: #f6f8fa;
+  --card: #ffffff;
+  --border: #e2e6eb;
+  --text: #1f2328;
+  --muted: #656d76;
+  --primary: #1a73e8;
+  --primary-hover: #1565c0;
+  --success: #137333;
+  --danger: #c5221f;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  color: var(--text);
+  background: #fff;
+  font-size: 14px;
+}
+
+.layout { display: grid; height: 100vh; }
+
+body.mode-mobile { font-size: 18px; }
+body.mode-mobile .layout { grid-template-columns: 1fr; }
+body.mode-mobile .sidebar { display: none; }
+body.mode-mobile .sidebar.open {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: transparent;
+  border-right: none;
+}
+body.mode-mobile .content { padding: 12px; }
+body.mode-mobile .doc { padding: 18px 14px; border-radius: 16px; }
+body.mode-mobile .btn { padding: 14px 18px; border-radius: 12px; font-size: 18px; }
+body.mode-mobile .btn-icon { width: 52px; height: 52px; }
+body.mode-mobile .doc-title { font-size: 22px; padding: 12px 12px; }
+body.mode-mobile .doc-meta { grid-template-columns: 1fr; gap: 12px; }
+body.mode-mobile .doc-meta-field input { font-size: 18px; padding: 12px 8px; }
+body.mode-mobile table.smeta th { padding: 8px 6px; font-size: 14px; }
+body.mode-mobile .total-bar { padding: 2px 8px 0; }
+body.mode-mobile .estimate-item { padding: 16px 14px; border-radius: 14px; }
+body.mode-mobile .estimate-item .name { font-size: 18px; }
+body.mode-mobile .estimate-item .date { font-size: 15px; }
+/* Крестик только в таблице — компактный, иначе не влезает в col-actions */
+body.mode-mobile table.smeta .row-del {
+  width: 30px;
+  height: 30px;
+  font-size: 20px;
+}
+
+.topbar {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.topbar-title {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+body.mode-mobile .sidebar.open::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.25);
+}
+body.mode-mobile .sidebar.open > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar {
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-panel {
+  width: min(33vw, 420px);
+  max-width: 90vw;
+  height: 100%;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar:not(.open) .sidebar-panel {
+  width: 100%;
+  max-width: none;
+  border-right: none;
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sidebar-header h1 { font-size: 16px; margin: 0; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+.estimates-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+.estimate-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+}
+.estimate-item:hover { background: var(--bg); }
+.estimate-item.active {
+  background: #e8f0fe;
+  border-color: #d2e3fc;
+  color: var(--primary);
+}
+.estimate-item .name {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.estimate-item .date {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 10px;
+}
+.sidebar-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn:hover {
+  background: var(--bg);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.btn-danger { color: var(--danger); }
+.btn-danger:hover { background: #fce8e6; }
+.btn-icon { width: 32px; height: 32px; padding: 0; border-radius: 6px; }
+.btn-block { width: 100%; }
+.btn-add {
+  background: #fff;
+  border: 1.5px dashed var(--primary);
+  color: var(--primary);
+  font-weight: 500;
+}
+.btn-add:hover { background: #f0f7ff; }
+.menu-btn { display: inline-flex; }
+
+.content { overflow-y: auto; padding: 24px; }
+.content-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  gap: 12px;
+}
+.content-empty .icon { font-size: 48px; opacity: 0.5; }
+
+.doc {
+  max-width: none;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.docActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.page-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.page-tab {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.page-tab:hover { background: #fff; color: var(--text); }
+.page-tab.is-active {
+  background: #fff;
+  color: var(--primary);
+  border-color: #d2e3fc;
+  box-shadow: var(--shadow);
+}
+body.mode-mobile .page-tab { padding: 12px 10px; font-size: 16px; }
+
+/* Разметка для генерации PDF (стили в CSS — html2canvas их видит) */
+.pdf-export-host {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 720px;
+  pointer-events: none;
+  z-index: -9999;
+  overflow: hidden;
+}
+.pdf-export-root {
+  width: 720px;
+  padding: 24px 18px 32px;
+  background: #fff;
+  color: #111;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.pdf-export-root--paginated {
+  padding: 0;
+}
+.pdf-export-page {
+  padding: 24px 18px 32px;
+  background: #fff;
+}
+.pdf-export-page .x-table tbody tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.pdf-page-break-before {
+  break-before: page;
+  page-break-before: always;
+}
+.pdf-export-root .x-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  text-align: center;
+}
+.pdf-export-root .x-subtitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 18px 0 8px;
+  text-align: left;
+}
+.pdf-export-root .x-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.pdf-export-root .x-table col.x-col-num { width: 44px; }
+.pdf-export-root .x-table col.x-col-name { width: auto; }
+.pdf-export-root .x-table col.x-col-unit { width: 90px; }
+.pdf-export-root .x-table col.x-col-price { width: 90px; }
+.pdf-export-root .x-table col.x-col-qty { width: 90px; }
+.pdf-export-root .x-table col.x-col-sum { width: 90px; }
+.pdf-export-root .x-table th,
+.pdf-export-root .x-table td {
+  border: 1px solid #111;
+  padding: 8px 10px;
+  vertical-align: top;
+  text-align: left;
+  font-size: 13px;
+  color: #111;
+}
+.pdf-export-root .x-table th {
+  background: #f3f3f3;
+  font-weight: 600;
+}
+.pdf-export-root .x-cell {
+  display: block;
+  width: 100%;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.pdf-export-root .x-total {
+  margin-top: 4px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #111;
+}
+.pdf-export-root .x-total .val { font-variant-numeric: tabular-nums; }
+.pdf-export-root .x-sign {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px;
+  margin-top: 26px;
+}
+.pdf-export-root .x-sign .sline { border-bottom: 1px solid #bbb; height: 18px; }
+.pdf-export-root .x-sign .lbl { color: #444; font-size: 12px; margin-top: 6px; }
+.pdf-export-root .x-sign .val {
+  font-size: 13px;
+  color: #111;
+  min-height: 18px;
+  padding: 0 2px;
+}
+
+.btn.is-busy {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.docTitle {
+  font-size: 20px;
+  font-weight: 800;
+  text-align: center;
+  margin: 6px 0 14px;
+}
+
+/* Таблица без дополнительной обёртки */
+
+table.smeta {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  table-layout: fixed;
+}
+.doc table.smeta {
+  margin-bottom: 0;
+}
+
+/* Очень маленькие экраны: уменьшаем таблицу целиком, сохраняя пропорции */
+table.smeta th {
+  word-break: break-word;
+  hyphens: auto;
+  line-height: 1.2;
+}
+
+table.smeta th, table.smeta td {
+  border: 1px solid var(--border);
+  padding: 0;
+  vertical-align: middle;
+}
+
+/*
+ * Ширины колонок — через <colgroup>, чтобы колонка «удалить» была фикс. (px),
+ * а не 5% от таблицы (иначе крестик съезжает и обрезается).
+ */
+/* Первые 6 колонок — как в режиме просмотра; в редактировании добавляется только col-actions */
+table.smeta col.col-num { width: 5%; }
+table.smeta col.col-name { width: 43%; }
+table.smeta col.col-unit,
+table.smeta col.col-price,
+table.smeta col.col-qty,
+table.smeta col.col-sum {
+  width: 13%;
+}
+table.smeta.smeta-edit col.col-actions { width: 44px; }
+table.smeta col.col-mat-name { width: 70%; }
+table.smeta col.col-mat-qty { width: 25%; }
+table.smeta col.col-stage-name { width: 46%; }
+table.smeta col.col-percent,
+table.smeta col.col-amount {
+  width: 22%;
+}
+table.smeta td.percent,
+table.smeta td.amount { text-align: right; }
+table.smeta td.percent input { text-align: right; }
+table.smeta th {
+  background: #f3f3f3;
+  font-weight: 600;
+  padding: 10px 8px;
+  font-size: 13px;
+}
+
+/* Поля в таблице только при редактировании — визуально как .cellText в просмотре */
+.doc[data-editing="true"] table.smeta td input,
+.doc[data-editing="true"] table.smeta td textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #111;
+  font-family: inherit;
+  border-radius: 0;
+}
+.doc[data-editing="true"] table.smeta td textarea {
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.doc[data-editing="true"] table.smeta td input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.doc[data-editing="true"] table.smeta td input[type="number"]::-webkit-outer-spin-button,
+.doc[data-editing="true"] table.smeta td input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.doc[data-editing="true"] table.smeta td input:focus,
+.doc[data-editing="true"] table.smeta td textarea:focus {
+  outline: 1px solid #111;
+  outline-offset: -2px;
+  background: transparent;
+}
+
+.docTitleInput {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 800;
+  padding: 4px 8px;
+}
+.doc[data-editing="true"] .docTitleInput {
+  font: inherit;
+  color: #111;
+}
+.doc[data-editing="true"] .docTitleInput:focus {
+  outline: none;
+  background: transparent;
+}
+
+.cellText { padding: 8px 10px; }
+.cellRight { text-align: right; font-variant-numeric: tabular-nums; }
+.cellCenter { text-align: center; }
+/* Колонка № — эталон размера для строки «Итого» */
+table.smeta td.num {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 400;
+  color: #111;
+}
+table.smeta td.num input { text-align: center; }
+table.smeta td.price, table.smeta td.qty, table.smeta td.sum { text-align: right; }
+table.smeta td.price input, table.smeta td.qty input { text-align: right; }
+table.smeta td.sum {
+  text-align: right;
+  padding: 0;
+  background: #fafafa;
+  font-variant-numeric: tabular-nums;
+}
+table.smeta td.actions {
+  text-align: center;
+  vertical-align: middle;
+  padding: 2px 4px;
+  overflow: visible;
+}
+.row-del {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.row-del:hover { background: #fce8e6; color: var(--danger); }
+
+.items-mobile { display: none; }
+
+@media (max-width: 560px) {
+  table.smeta {
+    display: table;
+    /* Вся таблица целиком: шрифты, отступы, линии — пропорционально */
+    --scale: 0.9;
+    transform: scale(var(--scale));
+    transform-origin: top left;
+    width: calc(100% / var(--scale));
+    margin-bottom: calc(16px / var(--scale));
+  }
+
+  .items-mobile { display: none; }
+
+  @media (max-width: 480px) {
+    table.smeta { --scale: 0.82; }
+  }
+
+  @media (max-width: 420px) {
+    table.smeta { --scale: 0.76; }
+  }
+
+  @media (max-width: 380px) {
+    table.smeta { --scale: 0.7; }
+  }
+
+  @media (max-width: 340px) {
+    table.smeta { --scale: 0.64; }
+  }
+
+  @media (max-width: 300px) {
+    table.smeta { --scale: 0.58; }
+  }
+
+  @media (max-width: 260px) {
+    table.smeta { --scale: 0.52; }
+  }
+
+  /* Узкий экран: меньше padding в ячейках (иначе цифры упираются в границы при scale) */
+  .doc[data-editing="false"] table.smeta th,
+  .doc[data-editing="true"] table.smeta th {
+    padding: 5px 4px;
+    font-size: 11px;
+  }
+  body.mode-mobile .doc[data-editing="true"] table.smeta td input,
+  body.mode-mobile .doc[data-editing="true"] table.smeta td textarea {
+    padding: 5px 5px;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .doc[data-editing="false"] table.smeta .cellText,
+  .doc[data-editing="true"] table.smeta .cellText {
+    padding: 5px 5px;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .doc table.smeta td.price .cellText,
+  .doc table.smeta td.qty .cellText,
+  .doc table.smeta td.sum .cellText,
+  .doc[data-editing="true"] table.smeta td.price input,
+  .doc[data-editing="true"] table.smeta td.qty input {
+    font-variant-numeric: auto;
+  }
+
+  table.smeta td.num,
+  .doc .total-bar .total-line {
+    font-size: 12px;
+  }
+
+  .mrow {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: var(--shadow);
+    padding: 12px 12px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .mrowTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .mrowNum {
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .mrowDel {
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    color: var(--danger);
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .mgrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .mfield label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+
+  .mfield input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 12px;
+    font-size: 16px;
+    background: #fff;
+    color: var(--text);
+    font-family: inherit;
+  }
+  .mfield textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 12px;
+    font-size: 16px;
+    background: #fff;
+    color: var(--text);
+    font-family: inherit;
+    resize: vertical;
+    min-height: 52px;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .mrowBottom {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    font-weight: 700;
+    align-items: baseline;
+  }
+
+  .mrowBottom .lbl { color: var(--muted); font-weight: 600; }
+  .mrowBottom .val { font-variant-numeric: tabular-nums; }
+}
+
+.total-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  padding: 2px 8px 0;
+  border-top: none;
+  margin-top: 0;
+}
+/* Как у номера строки в колонке №: тот же кегль и начертание */
+.total-bar .total-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: #111;
+}
+
+.actions-bar {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 0;
+  flex-wrap: wrap;
+}
+
+.doc-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+.footer-left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.link { color: inherit; text-decoration: none; }
+.link:hover { text-decoration: underline; }
+
+.sign {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 26px;
+  margin-top: 26px;
+}
+.sign .sline { border-bottom: 1px solid #bbb; height: 18px; }
+.sign .lbl { color: var(--muted); font-size: 12px; margin-top: 6px; }
+.sign .val { font-size: 13px; color: #111; min-height: 18px; padding: 0 2px; }
+.sign input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0 2px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #111;
+}
+.sign input:focus { outline: none; }
+
+/* Заказчик / исполнитель: в обоих режимах в одну линию (две колонки), как в просмотре */
+@media (max-width: 560px) {
+  .doc .sign {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
+/* Заголовок и таблица: один «экспортный» вид в просмотре и при редактировании */
+.doc[data-editing="false"] .docTitle,
+.doc[data-editing="true"] .docTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+
+.doc[data-editing="false"] table.smeta th,
+.doc[data-editing="true"] table.smeta th,
+.doc[data-editing="false"] table.smeta td,
+.doc[data-editing="true"] table.smeta td {
+  border-color: #111;
+}
+
+.doc[data-editing="false"] table.smeta th,
+.doc[data-editing="true"] table.smeta th {
+  background: #f3f3f3;
+  font-weight: 600;
+}
+
+.doc[data-editing="true"] table.smeta td.price input,
+.doc[data-editing="true"] table.smeta td.qty input {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Крупные отступы ячеек только на достаточно широком экране */
+@media (min-width: 561px) {
+  .doc[data-editing="false"] table.smeta th,
+  .doc[data-editing="true"] table.smeta th {
+    font-size: 13px;
+    padding: 10px 8px;
+  }
+  .doc[data-editing="false"] .cellText,
+  .doc[data-editing="true"] table.smeta td input,
+  .doc[data-editing="true"] table.smeta td textarea {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+}
+
+.doc[data-editing="false"] .total-bar,
+.doc[data-editing="true"] .total-bar {
+  border-top: none;
+  margin-top: 0;
+  padding: 2px 8px 0;
+}
+
+.doc[data-editing="false"] .total-bar .total-line,
+.doc[data-editing="true"] .total-bar .total-line {
+  color: #111;
+}
+
+.editorHeader {
+  padding: 8px 6px 12px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.editorTitleRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+@media (max-width: 650px) {
+  .editorTitleRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.editorTitleActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+.input:focus-visible {
+  outline: 2px solid rgba(34, 197, 94, 0.45);
+  outline-offset: 2px;
+}
+
+.inputTable {
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.inputNum {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tableWrap {
+  margin-top: 12px;
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid var(--stroke);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+  background: rgba(255,255,255,0.02);
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid var(--stroke);
+  padding: 10px 10px;
+  vertical-align: middle;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  background: rgba(0,0,0,0.12);
+  backdrop-filter: blur(10px);
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+@media (prefers-color-scheme: light) {
+  .table th {
+    background: rgba(255,255,255,0.75);
+  }
+}
+
+.colNum { width: 42px; }
+.colUnit { width: 110px; }
+.colPrice { width: 100px; }
+.colQty { width: 110px; }
+.colSum { width: 130px; }
+.colActions { width: 44px; text-align: center; }
+
+.numPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,0.05);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.sumCell {
+  display: inline-flex;
+  justify-content: flex-end;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.iconBtn {
+  appearance: none;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  border-radius: 10px;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+}
+
+.iconBtn:hover {
+  border-color: rgba(239, 68, 68, 0.55);
+  background: rgba(239, 68, 68, 0.14);
+}
+
+.editorFooter {
+  padding: 12px 6px 6px;
+}
+
+.totalBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.totalLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.totalLabel {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.totalValue {
+  font-size: 18px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  padding: 4px 2px;
+}
+
+.link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(255,255,255,0.35);
+}
+
+@media (prefers-color-scheme: light) {
+  .link {
+    border-bottom-color: rgba(0,0,0,0.28);
+  }
+}
+
+.link:hover {
+  color: var(--text);
+  border-bottom-style: solid;
+}

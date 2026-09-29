@@ -1,0 +1,1438 @@
+const STORAGE_KEY = "alexsmeta.estimates.v3";
+const SITE_VERSION = "0.1.0";
+const PAGES = ["works", "materials", "payments"];
+
+/** Высота контента одной страницы A4 при ширине 720px (подбирается под html2pdf) */
+const PDF_PAGE_HEIGHT_PX = 940;
+const PDF_ROOT_VPAD_PX = 56;
+
+function uid() {
+  return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function clampToNumber(value) {
+  const n = Number(String(value).replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatMoney(n) {
+  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(clampToNumber(n));
+}
+
+/** Для отображения: без незначащих нулей (10.00 → 10, 10.50 → 10.5) */
+function formatDisplayNumber(n) {
+  const v = clampToNumber(n);
+  if (!Number.isFinite(v)) return "0";
+  const rounded = Number(v.toFixed(8));
+  if (Object.is(rounded, -0)) return "0";
+  return String(rounded);
+}
+
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return `${d.toLocaleDateString("ru-RU")} ${d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function storageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function storageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function storageRemove(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Safari private / quota
+  }
+}
+
+function loadState() {
+  try {
+    const raw = storageGet(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveState(state) {
+  storageSet(STORAGE_KEY, JSON.stringify(state));
+}
+
+function makeEmptyItem() {
+  return { id: uid(), name: "", unit: "М.пог", price: 0, qty: 0 };
+}
+
+function makeEmptyMaterial() {
+  return { id: uid(), name: "", qty: 0 };
+}
+
+function makeEmptyStage() {
+  return { id: uid(), name: "", percent: 0 };
+}
+
+function normalizeEstimate(e) {
+  const items = Array.isArray(e?.items)
+    ? e.items.map((it) => ({
+        id: it.id ?? uid(),
+        name: it.name ?? "",
+        unit: it.unit ?? "М.пог",
+        price: clampToNumber(it.price),
+        qty: clampToNumber(it.qty),
+      }))
+    : [];
+  const materials = Array.isArray(e?.materials)
+    ? e.materials.map((it) => ({
+        id: it.id ?? uid(),
+        name: it.name ?? "",
+        qty: clampToNumber(it.qty),
+      }))
+    : [];
+  const paymentStages = Array.isArray(e?.paymentStages)
+    ? e.paymentStages.map((it) => ({
+        id: it.id ?? uid(),
+        name: it.name ?? "",
+        percent: clampToNumber(it.percent),
+      }))
+    : [];
+  return {
+    id: e?.id ?? uid(),
+    name: e?.name ?? "Без названия",
+    customer: e?.customer ?? "",
+    executor: e?.executor ?? "",
+    currency: e?.currency ?? "$",
+    updatedAt: e?.updatedAt ?? Date.now(),
+    items: items.length ? items : [makeEmptyItem()],
+    materials: materials.length ? materials : [makeEmptyMaterial()],
+    paymentStages: paymentStages.length ? paymentStages : [makeEmptyStage()],
+  };
+}
+
+function migrateLegacyIfNeeded() {
+  if (storageGet(STORAGE_KEY)) return;
+
+  const v2raw = storageGet("alexsmeta.estimates.v2");
+  if (v2raw) {
+    try {
+      const s2 = JSON.parse(v2raw);
+      if (s2 && Array.isArray(s2.estimates)) {
+        const v3 = {
+          estimates: s2.estimates.map((e) => normalizeEstimate(e)),
+          selectedId: typeof s2.selectedId === "string" ? s2.selectedId : null,
+        };
+        storageSet(STORAGE_KEY, JSON.stringify(v3));
+        return;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const legacy = storageGet("alexsmeta.estimates.v1");
+  if (!legacy) return;
+  try {
+    const s1 = JSON.parse(legacy);
+    if (!s1 || !Array.isArray(s1.estimates)) return;
+    const now = Date.now();
+    const v3 = {
+      estimates: s1.estimates.map((e) =>
+        normalizeEstimate({
+          id: e.id ?? uid(),
+          name: e.name ?? "Без названия",
+          customer: "",
+          executor: "",
+          currency: e.currency ?? "$",
+          updatedAt: now,
+          items: Array.isArray(e.items)
+            ? e.items.map((it) => ({
+                id: it.id ?? uid(),
+                name: it.name ?? "",
+                unit: it.unit ?? "М.пог",
+                price: clampToNumber(it.price),
+                qty: clampToNumber(it.qty),
+              }))
+            : [],
+        })
+      ),
+      selectedId: typeof s1.selectedId === "string" ? s1.selectedId : null,
+    };
+    storageSet(STORAGE_KEY, JSON.stringify(v3));
+    storageRemove("alexsmeta.estimates.v1");
+  } catch {
+    // ignore
+  }
+}
+
+function makeEmptyEstimate(name) {
+  return normalizeEstimate({
+    id: uid(),
+    name,
+    customer: "",
+    executor: "",
+    currency: "$",
+    updatedAt: Date.now(),
+    items: [makeEmptyItem()],
+    materials: [makeEmptyMaterial()],
+    paymentStages: [makeEmptyStage()],
+  });
+}
+
+function ensureState(state) {
+  if (state && Array.isArray(state.estimates) && state.estimates.length > 0) {
+    const estimates = state.estimates.map((e) => normalizeEstimate(e));
+    const selectedId =
+      typeof state.selectedId === "string" && estimates.some((e) => e.id === state.selectedId)
+        ? state.selectedId
+        : estimates[0].id;
+    return { estimates, selectedId };
+  }
+  const first = makeEmptyEstimate("Смета #1");
+  return { estimates: [first], selectedId: first.id };
+}
+
+function computeRowSum(item) {
+  return clampToNumber(item.price) * clampToNumber(item.qty);
+}
+
+function computeTotal(estimate) {
+  return (estimate.items ?? []).reduce((acc, it) => acc + computeRowSum(it), 0);
+}
+
+function computeStageAmount(estimate, percent) {
+  return (computeTotal(estimate) * clampToNumber(percent)) / 100;
+}
+
+function computePercentTotal(estimate) {
+  return (estimate.paymentStages ?? []).reduce((acc, it) => acc + clampToNumber(it.percent), 0);
+}
+
+function computeStagesAmountTotal(estimate) {
+  return (estimate.paymentStages ?? []).reduce((acc, it) => acc + computeStageAmount(estimate, it.percent), 0);
+}
+
+function qs(sel, root = document) {
+  const node = root.querySelector(sel);
+  if (!node) throw new Error(`Не найден элемент: ${sel}`);
+  return node;
+}
+
+function openSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  if (sidebar) sidebar.classList.add("open");
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  if (sidebar) sidebar.classList.remove("open");
+}
+
+function getSelectedEstimate(state) {
+  return state.estimates.find((e) => e.id === state.selectedId) ?? null;
+}
+
+function autosizeTextarea(node) {
+  if (!(node instanceof HTMLTextAreaElement)) return;
+  node.style.height = "auto";
+  node.style.height = `${node.scrollHeight}px`;
+}
+
+function autosizeAllTextareas(root = document) {
+  root.querySelectorAll("textarea").forEach((t) => autosizeTextarea(t));
+}
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function escapeAttr(s) {
+  return escapeHtml(s).replace(/`/g, "&#96;");
+}
+
+function setPageVisibility(page) {
+  const works = qs('[data-slot="page-works"]');
+  const materials = qs('[data-slot="page-materials"]');
+  const payments = qs('[data-slot="page-payments"]');
+  works.hidden = page !== "works";
+  materials.hidden = page !== "materials";
+  payments.hidden = page !== "payments";
+  qs('[data-slot="page-tabs"]').querySelectorAll("[data-page]").forEach((btn) => {
+    const active = btn.dataset.page === page;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-selected", active ? "true" : "false");
+  });
+}
+
+function render(state, ui) {
+  const list = qs('[data-slot="estimate-list"]');
+  const empty = qs('[data-slot="empty-state"]');
+  const doc = qs('[data-slot="doc"]');
+  const topbarTitle = qs('[data-slot="topbar-title"]');
+  const table = qs('[data-slot="items-table"]');
+  const materialsTable = qs('[data-slot="materials-table"]');
+  const paymentsTable = qs('[data-slot="payments-table"]');
+  const footer = qs('[data-slot="editor-footer"]');
+  const paymentsFooter = qs('[data-slot="payments-footer"]');
+  const sign = qs('[data-slot="sign"]');
+  const titleEl = qs('[data-slot="doc-title"]');
+  const editEnterBtn = qs('[data-action="edit-enter"]', doc);
+  const editSaveBtn = qs('[data-action="edit-save"]', doc);
+  const editCancelBtn = qs('[data-action="edit-cancel"]', doc);
+  const editOnlyActions = qs('[data-slot="edit-only-actions"]', doc);
+  const editOnlyMaterials = qs('[data-slot="edit-only-materials"]', doc);
+  const editOnlyPayments = qs('[data-slot="edit-only-payments"]', doc);
+
+  list.innerHTML = "";
+  const estimatesSorted = [...state.estimates].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+
+  for (const est of estimatesSorted) {
+    const active = est.id === state.selectedId;
+    const item = document.createElement("div");
+    item.className = `estimate-item ${active ? "active" : ""}`;
+    item.dataset.action = "select-estimate";
+    item.dataset.id = est.id;
+    item.innerHTML = `
+      <div class="name">${escapeHtml(est.name)}</div>
+      <div class="date">${escapeHtml(fmtDate(est.updatedAt ?? Date.now()))}</div>
+    `;
+    list.append(item);
+  }
+
+  const estimate = state.estimates.find((e) => e.id === state.selectedId);
+  if (!estimate) {
+    empty.style.display = "flex";
+    doc.style.display = "none";
+    doc.dataset.editing = "false";
+    topbarTitle.textContent = "Смета";
+    table.innerHTML = "";
+    materialsTable.innerHTML = "";
+    paymentsTable.innerHTML = "";
+    footer.innerHTML = "";
+    paymentsFooter.innerHTML = "";
+    sign.innerHTML = "";
+    return;
+  }
+
+  empty.style.display = "none";
+  doc.style.display = "block";
+  doc.dataset.editing = ui.editing ? "true" : "false";
+  const current = ui.editing ? ui.draft : estimate;
+  const page = PAGES.includes(ui.page) ? ui.page : "works";
+  topbarTitle.textContent = current.name || "Смета";
+  setPageVisibility(page);
+
+  editEnterBtn.style.display = ui.editing ? "none" : "inline-flex";
+  editSaveBtn.style.display = ui.editing ? "inline-flex" : "none";
+  editCancelBtn.style.display = ui.editing ? "inline-flex" : "none";
+  editOnlyActions.style.display = ui.editing && page === "works" ? "block" : "none";
+  editOnlyMaterials.style.display = ui.editing && page === "materials" ? "block" : "none";
+  editOnlyPayments.style.display = ui.editing && page === "payments" ? "block" : "none";
+
+  titleEl.innerHTML = ui.editing
+    ? `<input class="docTitleInput" type="text" data-action="draft-edit" data-field="name" value="${escapeAttr(current.name ?? "")}" />`
+    : escapeHtml(current.name ?? "");
+
+  table.className = ui.editing ? "smeta smeta-edit" : "smeta";
+  table.innerHTML = `
+    <colgroup>
+      <col class="col-num" />
+      <col class="col-name" />
+      <col class="col-unit" />
+      <col class="col-price" />
+      <col class="col-qty" />
+      <col class="col-sum" />
+      ${ui.editing ? `<col class="col-actions" />` : ``}
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="h-num">№</th>
+        <th class="h-name">Наименование</th>
+        <th class="h-unit">Ед. изм</th>
+        <th class="h-price">Цена</th>
+        <th class="h-qty">Кол-во</th>
+        <th class="h-sum">Сумма</th>
+        ${ui.editing ? `<th class="h-actions" aria-label="Удалить"></th>` : ``}
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = table.querySelector("tbody");
+  if (!tbody) return;
+
+  current.items.forEach((it, idx) => {
+    const sum = computeRowSum(it);
+    const tr = document.createElement("tr");
+    tr.dataset.rowid = it.id;
+    tr.innerHTML = `
+      <td class="num">${idx + 1}</td>
+      <td class="c-name">
+        ${
+          ui.editing
+            ? `<textarea rows="1" data-action="draft-item" data-id="${it.id}" data-field="name">${escapeHtml(it.name ?? "")}</textarea>`
+            : `<div class="cellText">${escapeHtml(it.name ?? "")}</div>`
+        }
+      </td>
+      <td class="unit">
+        ${
+          ui.editing
+            ? `<input type="text" data-action="draft-item" data-id="${it.id}" data-field="unit" value="${escapeAttr(it.unit ?? "")}">`
+            : `<div class="cellText cellCenter">${escapeHtml(it.unit ?? "")}</div>`
+        }
+      </td>
+      <td class="price">
+        ${
+          ui.editing
+            ? `<input type="number" step="any" min="0" inputmode="decimal" data-action="draft-item-num" data-id="${it.id}" data-field="price" value="${escapeAttr(formatDisplayNumber(it.price ?? 0))}">`
+            : `<div class="cellText cellRight">${formatDisplayNumber(it.price ?? 0)}</div>`
+        }
+      </td>
+      <td class="qty">
+        ${
+          ui.editing
+            ? `<input type="number" step="any" min="0" inputmode="decimal" data-action="draft-item-num" data-id="${it.id}" data-field="qty" value="${escapeAttr(formatDisplayNumber(it.qty ?? 0))}">`
+            : `<div class="cellText cellRight">${escapeHtml(formatDisplayNumber(it.qty ?? 0))}</div>`
+        }
+      </td>
+      <td class="sum"><div class="cellText cellRight" data-sum="${it.id}">${formatDisplayNumber(sum)}</div></td>
+      ${
+        ui.editing
+          ? `<td class="actions"><button class="row-del" type="button" data-action="draft-delete-row" data-id="${it.id}" title="Удалить">×</button></td>`
+          : ``
+      }
+    `;
+    tbody.append(tr);
+  });
+
+  const total = computeTotal(current);
+  const cur = current.currency ?? "$";
+  footer.innerHTML = `
+    <div class="total-line">
+      <span>Итого:</span>
+      <span>${escapeHtml(formatDisplayNumber(total))} ${escapeHtml(cur)}</span>
+    </div>
+  `;
+
+  sign.innerHTML = `
+    <div>
+      ${
+        ui.editing
+          ? `<input type="text" data-action="draft-edit" data-field="customer" value="${escapeAttr(current.customer ?? "")}" />`
+          : `<div class="val">${escapeHtml(current.customer ?? "")}</div>`
+      }
+      <div class="sline"></div>
+      <div class="lbl">Заказчик</div>
+    </div>
+    <div>
+      ${
+        ui.editing
+          ? `<input type="text" data-action="draft-edit" data-field="executor" value="${escapeAttr(current.executor ?? "")}" />`
+          : `<div class="val">${escapeHtml(current.executor ?? "")}</div>`
+      }
+      <div class="sline"></div>
+      <div class="lbl">Исполнитель</div>
+    </div>
+  `;
+
+  materialsTable.className = ui.editing ? "smeta smeta-edit" : "smeta";
+  materialsTable.innerHTML = `
+    <colgroup>
+      <col class="col-num" />
+      <col class="col-mat-name" />
+      <col class="col-mat-qty" />
+      ${ui.editing ? `<col class="col-actions" />` : ``}
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="h-num">№</th>
+        <th class="h-name">Название материала</th>
+        <th class="h-qty">Кол-во</th>
+        ${ui.editing ? `<th class="h-actions" aria-label="Удалить"></th>` : ``}
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  const materialsBody = materialsTable.querySelector("tbody");
+  (current.materials ?? []).forEach((it, idx) => {
+    const tr = document.createElement("tr");
+    tr.dataset.rowid = it.id;
+    tr.innerHTML = `
+      <td class="num">${idx + 1}</td>
+      <td class="c-name">
+        ${
+          ui.editing
+            ? `<textarea rows="1" data-action="draft-material" data-id="${it.id}" data-field="name">${escapeHtml(it.name ?? "")}</textarea>`
+            : `<div class="cellText">${escapeHtml(it.name ?? "")}</div>`
+        }
+      </td>
+      <td class="qty">
+        ${
+          ui.editing
+            ? `<input type="number" step="any" min="0" inputmode="decimal" data-action="draft-material-num" data-id="${it.id}" data-field="qty" value="${escapeAttr(formatDisplayNumber(it.qty ?? 0))}">`
+            : `<div class="cellText cellRight">${escapeHtml(formatDisplayNumber(it.qty ?? 0))}</div>`
+        }
+      </td>
+      ${
+        ui.editing
+          ? `<td class="actions"><button class="row-del" type="button" data-action="draft-delete-material" data-id="${it.id}" title="Удалить">×</button></td>`
+          : ``
+      }
+    `;
+    materialsBody.append(tr);
+  });
+
+  paymentsTable.className = ui.editing ? "smeta smeta-edit" : "smeta";
+  paymentsTable.innerHTML = `
+    <colgroup>
+      <col class="col-num" />
+      <col class="col-stage-name" />
+      <col class="col-percent" />
+      <col class="col-amount" />
+      ${ui.editing ? `<col class="col-actions" />` : ``}
+    </colgroup>
+    <thead>
+      <tr>
+        <th class="h-num">№</th>
+        <th class="h-name">Название этапа</th>
+        <th class="h-price">%</th>
+        <th class="h-sum">Сумма</th>
+        ${ui.editing ? `<th class="h-actions" aria-label="Удалить"></th>` : ``}
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  const paymentsBody = paymentsTable.querySelector("tbody");
+  (current.paymentStages ?? []).forEach((it, idx) => {
+    const amount = computeStageAmount(current, it.percent);
+    const tr = document.createElement("tr");
+    tr.dataset.rowid = it.id;
+    tr.innerHTML = `
+      <td class="num">${idx + 1}</td>
+      <td class="c-name">
+        ${
+          ui.editing
+            ? `<textarea rows="1" data-action="draft-stage" data-id="${it.id}" data-field="name">${escapeHtml(it.name ?? "")}</textarea>`
+            : `<div class="cellText">${escapeHtml(it.name ?? "")}</div>`
+        }
+      </td>
+      <td class="percent">
+        ${
+          ui.editing
+            ? `<input type="number" step="any" min="0" inputmode="decimal" data-action="draft-stage-num" data-id="${it.id}" data-field="percent" value="${escapeAttr(formatDisplayNumber(it.percent ?? 0))}">`
+            : `<div class="cellText cellRight">${escapeHtml(formatDisplayNumber(it.percent ?? 0))}</div>`
+        }
+      </td>
+      <td class="sum amount"><div class="cellText cellRight" data-stage-sum="${it.id}">${formatDisplayNumber(amount)}</div></td>
+      ${
+        ui.editing
+          ? `<td class="actions"><button class="row-del" type="button" data-action="draft-delete-stage" data-id="${it.id}" title="Удалить">×</button></td>`
+          : ``
+      }
+    `;
+    paymentsBody.append(tr);
+  });
+
+  paymentsFooter.innerHTML = `
+    <div class="total-line">
+      <span>Итого по этапам:</span>
+      <span>${escapeHtml(formatDisplayNumber(computePercentTotal(current)))}% · ${escapeHtml(formatDisplayNumber(computeStagesAmountTotal(current)))} ${escapeHtml(cur)}</span>
+    </div>
+  `;
+
+  autosizeAllTextareas(doc);
+}
+
+function buildExportHtml(estimate) {
+  const rows = (estimate.items ?? []).map((it, idx) => {
+    const price = clampToNumber(it.price);
+    const qty = clampToNumber(it.qty);
+    const sum = price * qty;
+    return `
+      <tr>
+        <td class="c-num">${idx + 1}</td>
+        <td class="c-name">${escapeHtml(it.name ?? "")}</td>
+        <td class="c-unit">${escapeHtml(it.unit ?? "")}</td>
+        <td class="c-price">${formatDisplayNumber(price)}</td>
+        <td class="c-qty">${formatDisplayNumber(qty)}</td>
+        <td class="c-sum">${formatDisplayNumber(sum)}</td>
+      </tr>
+    `;
+  });
+
+  const total = computeTotal(estimate);
+  const currency = estimate.currency ?? "$";
+  const title = estimate.name ?? "Смета";
+  const customer = estimate.customer ?? "";
+  const executor = estimate.executor ?? "";
+
+  return `<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${escapeHtml(title)} — экспорт</title>
+    <style>
+      :root { --border: #111; --muted: #444; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #111; }
+      .page { max-width: 980px; margin: 0 auto; padding: 28px 18px 40px; }
+      .toolbar { display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 14px; }
+      .btn { padding: 8px 12px; border: 1px solid #bbb; background: #fff; cursor: pointer; border-radius: 8px; }
+      .title { font-size: 18px; font-weight: 700; margin: 0 0 10px; text-align: center; }
+
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid var(--border); padding: 8px 10px; vertical-align: top; }
+      th { background: #f3f3f3; font-size: 13px; text-align: left; }
+      td { font-size: 13px; }
+      .c-num { width: 44px; text-align: center; }
+      td { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+      .c-unit { width: 90px; text-align: center; }
+      .c-price, .c-qty, .c-sum { width: 90px; text-align: right; font-variant-numeric: tabular-nums; }
+      .totalRow { margin-top: 14px; display: flex; justify-content: flex-end; gap: 10px; font-weight: 700; }
+      .totalRow .val { font-variant-numeric: tabular-nums; }
+      .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 26px; }
+      .sign .sline { border-bottom: 1px solid #bbb; height: 18px; }
+      .sign .lbl { color: var(--muted); font-size: 12px; margin-top: 6px; }
+      .sign .val { font-size: 13px; color: #111; min-height: 18px; padding: 0 2px; }
+
+      @media print {
+        .toolbar { display: none; }
+        .page { padding: 0; margin: 0; max-width: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="toolbar">
+        <button class="btn" onclick="window.print()">Печать / PDF</button>
+      </div>
+
+      <h1 class="title">${escapeHtml(title)}</h1>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="c-num">№</th>
+            <th>Наименование</th>
+            <th class="c-unit">Ед. изм</th>
+            <th class="c-price">Цена</th>
+            <th class="c-qty">Кол-во</th>
+            <th class="c-sum">Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.join("") || `<tr><td class="c-num">1</td><td></td><td class="c-unit"></td><td class="c-price">0</td><td class="c-qty">0</td><td class="c-sum">0</td></tr>`}
+        </tbody>
+      </table>
+
+      <div class="totalRow">
+        <div>Итого:</div>
+        <div class="val">${formatDisplayNumber(total)} ${escapeHtml(currency)}</div>
+      </div>
+
+      <div class="sign">
+        <div>
+          <div class="val">${escapeHtml(customer)}</div>
+          <div class="sline"></div>
+          <div class="lbl">Заказчик</div>
+        </div>
+        <div>
+          <div class="val">${escapeHtml(executor)}</div>
+          <div class="sline"></div>
+          <div class="lbl">Исполнитель</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>`;
+}
+
+function buildExportTableHeadHtml() {
+  return `
+    <colgroup>
+      <col class="x-col-num" />
+      <col class="x-col-name" />
+      <col class="x-col-unit" />
+      <col class="x-col-price" />
+      <col class="x-col-qty" />
+      <col class="x-col-sum" />
+    </colgroup>
+    <thead>
+      <tr>
+        <th><div class="x-cell">№</div></th>
+        <th><div class="x-cell">Наименование</div></th>
+        <th><div class="x-cell">Ед. изм</div></th>
+        <th><div class="x-cell">Цена</div></th>
+        <th><div class="x-cell">Кол-во</div></th>
+        <th><div class="x-cell">Сумма</div></th>
+      </tr>
+    </thead>
+  `;
+}
+
+function buildExportTableRowsHtml(estimate, start = 0, end) {
+  const items = estimate.items ?? [];
+  const slice = end === undefined ? items : items.slice(start, end);
+  if (slice.length === 0) {
+    return `<tr><td><div class="x-cell">1</div></td><td><div class="x-cell"></div></td><td><div class="x-cell"></div></td><td><div class="x-cell">0</div></td><td><div class="x-cell">0</div></td><td><div class="x-cell">0</div></td></tr>`;
+  }
+  return slice
+    .map((it, i) => {
+      const idx = start + i;
+      const price = clampToNumber(it.price);
+      const qty = clampToNumber(it.qty);
+      const sum = price * qty;
+      return `
+      <tr>
+        <td><div class="x-cell">${idx + 1}</div></td>
+        <td><div class="x-cell">${escapeHtml(it.name ?? "")}</div></td>
+        <td><div class="x-cell">${escapeHtml(it.unit ?? "")}</div></td>
+        <td><div class="x-cell">${formatDisplayNumber(price)}</div></td>
+        <td><div class="x-cell">${formatDisplayNumber(qty)}</div></td>
+        <td><div class="x-cell">${formatDisplayNumber(sum)}</div></td>
+      </tr>
+    `;
+    })
+    .join("");
+}
+
+function buildExportTableHtml(estimate, start = 0, end) {
+  return `
+    <table class="x-table">
+      ${buildExportTableHeadHtml()}
+      <tbody>${buildExportTableRowsHtml(estimate, start, end)}</tbody>
+    </table>
+  `;
+}
+
+function buildExportMaterialsTableHtml(estimate) {
+  const rows = (estimate.materials ?? [])
+    .map(
+      (it, idx) => `
+      <tr>
+        <td><div class="x-cell">${idx + 1}</div></td>
+        <td><div class="x-cell">${escapeHtml(it.name ?? "")}</div></td>
+        <td><div class="x-cell">${formatDisplayNumber(it.qty ?? 0)}</div></td>
+      </tr>`
+    )
+    .join("");
+  return `
+    <h3 class="x-subtitle">Материалы</h3>
+    <table class="x-table">
+      <colgroup>
+        <col class="x-col-num" />
+        <col class="x-col-name" />
+        <col class="x-col-qty" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th><div class="x-cell">№</div></th>
+          <th><div class="x-cell">Название материала</div></th>
+          <th><div class="x-cell">Кол-во</div></th>
+        </tr>
+      </thead>
+      <tbody>${rows || `<tr><td><div class="x-cell">1</div></td><td><div class="x-cell"></div></td><td><div class="x-cell">0</div></td></tr>`}</tbody>
+    </table>
+  `;
+}
+
+function buildExportPaymentsTableHtml(estimate) {
+  const currency = estimate.currency ?? "$";
+  const rows = (estimate.paymentStages ?? [])
+    .map((it, idx) => {
+      const amount = computeStageAmount(estimate, it.percent);
+      return `
+      <tr>
+        <td><div class="x-cell">${idx + 1}</div></td>
+        <td><div class="x-cell">${escapeHtml(it.name ?? "")}</div></td>
+        <td><div class="x-cell">${formatDisplayNumber(it.percent ?? 0)}</div></td>
+        <td><div class="x-cell">${formatDisplayNumber(amount)}</div></td>
+      </tr>`;
+    })
+    .join("");
+  return `
+    <h3 class="x-subtitle">Этапы оплаты</h3>
+    <table class="x-table">
+      <colgroup>
+        <col class="x-col-num" />
+        <col class="x-col-name" />
+        <col class="x-col-qty" />
+        <col class="x-col-sum" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th><div class="x-cell">№</div></th>
+          <th><div class="x-cell">Название этапа</div></th>
+          <th><div class="x-cell">%</div></th>
+          <th><div class="x-cell">Сумма</div></th>
+        </tr>
+      </thead>
+      <tbody>${rows || `<tr><td><div class="x-cell">1</div></td><td><div class="x-cell"></div></td><td><div class="x-cell">0</div></td><td><div class="x-cell">0</div></td></tr>`}</tbody>
+    </table>
+    <div class="x-total">
+      <div>Итого по этапам:</div>
+      <div class="val">${formatDisplayNumber(computePercentTotal(estimate))}% · ${formatDisplayNumber(computeStagesAmountTotal(estimate))} ${escapeHtml(currency)}</div>
+    </div>
+  `;
+}
+
+function buildExportFooterHtml(estimate) {
+  const total = computeTotal(estimate);
+  const currency = estimate.currency ?? "$";
+  const customer = estimate.customer ?? "";
+  const executor = estimate.executor ?? "";
+  return `
+    <div class="x-total">
+      <div>Итого:</div>
+      <div class="val">${formatDisplayNumber(total)} ${escapeHtml(currency)}</div>
+    </div>
+    ${buildExportMaterialsTableHtml(estimate)}
+    ${buildExportPaymentsTableHtml(estimate)}
+    <div class="x-sign">
+      <div><div class="val">${escapeHtml(customer)}</div><div class="sline"></div><div class="lbl">Заказчик</div></div>
+      <div><div class="val">${escapeHtml(executor)}</div><div class="sline"></div><div class="lbl">Исполнитель</div></div>
+    </div>
+  `;
+}
+
+function buildExportBodyHtml(estimate) {
+  const title = estimate.name ?? "Смета";
+  return `
+    <h2 class="x-title">${escapeHtml(title)}</h2>
+    ${buildExportTableHtml(estimate)}
+    ${buildExportFooterHtml(estimate)}
+  `;
+}
+
+function buildExportInnerHtml(estimate) {
+  return `
+    <style>
+      :root { --border: #111; --muted: #444; }
+      .x-title { font-size: 18px; font-weight: 700; margin: 0 0 10px; text-align: center; }
+
+      .x-table { width: 100%; border-collapse: collapse; }
+      .x-table th, .x-table td { border: 1px solid var(--border); padding: 8px 10px; vertical-align: top; }
+      .x-table th { background: #f3f3f3; font-size: 13px; text-align: left; }
+      .x-table td { font-size: 13px; }
+      .x-table td { white-space: normal; overflow-wrap: anywhere; word-break: break-word; }
+      .x-table .c-num { width: 44px; text-align: center; }
+      .x-table .c-unit { width: 90px; text-align: center; }
+      .x-table .c-price, .x-table .c-qty, .x-table .c-sum { width: 90px; text-align: right; font-variant-numeric: tabular-nums; }
+      .x-total { margin-top: 4px; display: flex; justify-content: flex-end; gap: 10px; font-size: 13px; font-weight: 400; }
+      .x-total .val { font-variant-numeric: tabular-nums; }
+      .x-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 26px; }
+      .x-sign .sline { border-bottom: 1px solid #bbb; height: 18px; }
+      .x-sign .lbl { color: var(--muted); font-size: 12px; margin-top: 6px; }
+      .x-sign .val { font-size: 13px; color: #111; min-height: 18px; padding: 0 2px; }
+
+      @media (max-width: 560px) {
+        .x-sign { grid-template-columns: 1fr; gap: 16px; }
+      }
+    </style>
+    ${buildExportBodyHtml(estimate)}
+  `;
+}
+
+function mutate(state, fn) {
+  const next = structuredClone(state);
+  fn(next);
+  return next;
+}
+
+function pdfFilename(estimate) {
+  const base = String(estimate?.name ?? "smeta")
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+    .trim();
+  return `${base || "smeta"}.pdf`;
+}
+
+function buildPdfExportElement(estimate) {
+  const root = document.createElement("div");
+  root.className = "pdf-export-root";
+  root.innerHTML = buildExportBodyHtml(estimate);
+  return root;
+}
+
+function buildPaginatedPdfExportElement(estimate, pages) {
+  const root = document.createElement("div");
+  root.className = "pdf-export-root pdf-export-root--paginated";
+  const title = estimate.name ?? "Смета";
+
+  pages.forEach((page, pageIndex) => {
+    const pageEl = document.createElement("div");
+    pageEl.className = "pdf-export-page";
+    if (pageIndex > 0) pageEl.classList.add("pdf-page-break-before");
+
+    let html = "";
+    if (pageIndex === 0) html += `<h2 class="x-title">${escapeHtml(title)}</h2>`;
+    html += buildExportTableHtml(estimate, page.start, page.end);
+    if (pageIndex === pages.length - 1) html += buildExportFooterHtml(estimate);
+
+    pageEl.innerHTML = html;
+    root.append(pageEl);
+  });
+
+  return root;
+}
+
+function computePdfRowPages(rowHeights, blocks) {
+  const { titleH, theadH, footerH } = blocks;
+  const n = rowHeights.length;
+  if (n === 0) return [{ start: 0, end: 0 }];
+
+  const pages = [];
+  let i = 0;
+  let pageIndex = 0;
+
+  while (i < n) {
+    const overhead = pageIndex === 0 ? PDF_ROOT_VPAD_PX + titleH + theadH : PDF_ROOT_VPAD_PX + theadH;
+    const budget = PDF_PAGE_HEIGHT_PX - overhead;
+    const start = i;
+    let used = 0;
+
+    while (i < n) {
+      const rowH = rowHeights[i];
+      const extra = i === n - 1 ? footerH : 0;
+      if (used + rowH + extra > budget && used > 0) break;
+      used += rowH;
+      i++;
+    }
+
+    if (i === start) {
+      used += rowHeights[start];
+      i = start + 1;
+    }
+
+    pages.push({ start, end: i });
+    pageIndex++;
+  }
+
+  return pages;
+}
+
+async function measurePdfRowPages(estimate) {
+  const host = document.createElement("div");
+  host.className = "pdf-export-host";
+  host.setAttribute("aria-hidden", "true");
+  const measureEl = buildPdfExportElement(estimate);
+  host.append(measureEl);
+  document.body.append(host);
+  await waitForLayout();
+
+  try {
+    const titleH = measureEl.querySelector(".x-title")?.offsetHeight ?? 30;
+    const theadH = measureEl.querySelector("thead")?.offsetHeight ?? 28;
+    const rowHeights = [...measureEl.querySelectorAll("tbody tr")].map((tr) => tr.offsetHeight);
+    const totalH = measureEl.querySelector(".x-total")?.offsetHeight ?? 24;
+    const signH = measureEl.querySelector(".x-sign")?.offsetHeight ?? 80;
+    const footerH = totalH + signH + 20;
+
+    const pages = computePdfRowPages(rowHeights, { titleH, theadH, footerH });
+    const singlePage = pages.length === 1 && pages[0].start === 0 && pages[0].end === rowHeights.length;
+    return singlePage ? null : pages;
+  } finally {
+    host.remove();
+  }
+}
+
+function waitForLayout() {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 80)));
+  });
+}
+
+function pdfExportOptions(estimate, paginated) {
+  const opt = {
+    margin: [10, 8, 10, 8],
+    filename: pdfFilename(estimate),
+    image: { type: "jpeg", quality: 0.95 },
+    html2canvas: {
+      scale: 2,
+      scrollX: 0,
+      scrollY: 0,
+      backgroundColor: "#ffffff",
+      width: 720,
+      windowWidth: 720,
+    },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+  };
+  if (paginated) {
+    opt.pagebreak = { mode: ["css", "legacy"], before: ".pdf-page-break-before", avoid: "tr" };
+  }
+  return opt;
+}
+
+async function createPdfBlob(estimate) {
+  if (typeof window.html2pdf !== "function") {
+    throw new Error("Библиотека PDF не загрузилась. Проверьте интернет и обновите страницу.");
+  }
+
+  const pages = await measurePdfRowPages(estimate);
+  const paginated = Boolean(pages);
+  const el = paginated ? buildPaginatedPdfExportElement(estimate, pages) : buildPdfExportElement(estimate);
+
+  const host = document.createElement("div");
+  host.className = "pdf-export-host";
+  host.setAttribute("aria-hidden", "true");
+  host.append(el);
+  document.body.append(host);
+
+  await waitForLayout();
+
+  try {
+    return await window.html2pdf().set(pdfExportOptions(estimate, paginated)).from(el).outputPdf("blob");
+  } finally {
+    host.remove();
+  }
+}
+
+function downloadPdfBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  a.style.display = "none";
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+async function downloadEstimatePdf(estimate) {
+  const blob = await createPdfBlob(estimate);
+  downloadPdfBlob(blob, pdfFilename(estimate));
+}
+
+function canSharePdfFile() {
+  if (!navigator.share || !navigator.canShare) return false;
+  try {
+    const probe = new File([""], "probe.pdf", { type: "application/pdf" });
+    return navigator.canShare({ files: [probe] });
+  } catch {
+    return false;
+  }
+}
+
+async function shareEstimatePdf(estimate) {
+  const blob = await createPdfBlob(estimate);
+  const filename = pdfFilename(estimate);
+  const file = new File([blob], filename, { type: "application/pdf" });
+  const shareData = { files: [file] };
+
+  if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
+    await navigator.share(shareData);
+    return;
+  }
+
+  downloadPdfBlob(blob, filename);
+  alert("Этот браузер не умеет отправлять файл напрямую. PDF сохранён — прикрепите его из «Загрузок» в Telegram или почте.");
+}
+
+function setPdfButtonsBusy(busy) {
+  document.querySelectorAll('[data-action="pdf-download"], [data-action="pdf-share"]').forEach((btn) => {
+    btn.classList.toggle("is-busy", busy);
+    btn.disabled = busy;
+  });
+}
+
+function updatePdfShareButtonVisibility() {
+  const btn = document.querySelector('[data-slot="pdf-share-btn"]');
+  if (!btn) return;
+  btn.style.display = canSharePdfFile() ? "inline-flex" : "none";
+}
+
+function main() {
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+  const verEl = document.querySelector('[data-slot="site-version"]');
+  if (verEl) verEl.textContent = SITE_VERSION;
+
+  migrateLegacyIfNeeded();
+  let state = ensureState(loadState());
+  saveState(state);
+  let ui = { editing: false, draft: null, page: "works" };
+
+  function rerender() {
+    render(state, ui);
+    saveState(state);
+    updatePdfShareButtonVisibility();
+  }
+
+  rerender();
+
+  function cancelEdit() {
+    ui = { editing: false, draft: null, page: ui.page };
+    rerender();
+  }
+
+  function enterEdit() {
+    const current = getSelectedEstimate(state);
+    if (!current) return;
+    ui = { editing: true, draft: structuredClone(current), page: ui.page };
+    rerender();
+  }
+
+  function saveEdit() {
+    if (!ui.editing || !ui.draft) return;
+    state = mutate(state, (s) => {
+      const idx = s.estimates.findIndex((e) => e.id === ui.draft.id);
+      if (idx >= 0) s.estimates[idx] = { ...normalizeEstimate(ui.draft), updatedAt: Date.now() };
+    });
+    ui = { editing: false, draft: null, page: ui.page };
+    rerender();
+  }
+
+  function getExportEstimate() {
+    if (ui.editing && ui.draft) return ui.draft;
+    return getSelectedEstimate(state);
+  }
+
+  async function runPdfExport(mode, triggerBtn) {
+    const estimate = getExportEstimate();
+    if (!estimate) return;
+    if (triggerBtn?.classList.contains("is-busy")) return;
+    setPdfButtonsBusy(true);
+    try {
+      if (mode === "share") await shareEstimatePdf(estimate);
+      else await downloadEstimatePdf(estimate);
+    } catch (err) {
+      if (err && typeof err === "object" && "name" in err && err.name === "AbortError") return;
+      const msg = err instanceof Error ? err.message : "Не удалось создать PDF";
+      alert(msg);
+    } finally {
+      setPdfButtonsBusy(false);
+    }
+  }
+
+  function updateSumAndTotalInDom(draft, itemId) {
+    const item = draft.items.find((it) => it.id === itemId);
+    if (!item) return;
+    const sumEl = document.querySelector(`[data-sum="${CSS.escape(itemId)}"]`);
+    if (sumEl) sumEl.textContent = formatDisplayNumber(computeRowSum(item));
+    const footer = document.querySelector('[data-slot="editor-footer"]');
+    const cur = draft.currency ?? "$";
+    const total = computeTotal(draft);
+    if (footer) {
+      footer.innerHTML = `
+        <div class="total-line">
+          <span>Итого:</span>
+          <span>${escapeHtml(formatDisplayNumber(total))} ${escapeHtml(cur)}</span>
+        </div>
+      `;
+    }
+    updatePaymentAmountsInDom(draft);
+  }
+
+  function updatePaymentAmountsInDom(draft) {
+    const cur = draft.currency ?? "$";
+    (draft.paymentStages ?? []).forEach((st) => {
+      const el = document.querySelector(`[data-stage-sum="${CSS.escape(st.id)}"]`);
+      if (el) el.textContent = formatDisplayNumber(computeStageAmount(draft, st.percent));
+    });
+    const paymentsFooter = document.querySelector('[data-slot="payments-footer"]');
+    if (paymentsFooter) {
+      paymentsFooter.innerHTML = `
+        <div class="total-line">
+          <span>Итого по этапам:</span>
+          <span>${escapeHtml(formatDisplayNumber(computePercentTotal(draft)))}% · ${escapeHtml(formatDisplayNumber(computeStagesAmountTotal(draft)))} ${escapeHtml(cur)}</span>
+        </div>
+      `;
+    }
+  }
+
+  document.addEventListener("click", (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    const actionEl = t.closest("[data-action]");
+    if (!(actionEl instanceof HTMLElement)) return;
+    const action = actionEl.dataset.action;
+    if (!action) return;
+
+    if (action === "toggle-sidebar") {
+      openSidebar();
+      return;
+    }
+    if (action === "close-sidebar") {
+      closeSidebar();
+      return;
+    }
+
+    if (action === "refresh") {
+      if (ui.editing) cancelEdit();
+      state = ensureState(loadState());
+      rerender();
+      return;
+    }
+
+    if (action === "set-page") {
+      const nextPage = actionEl.dataset.page;
+      if (!PAGES.includes(nextPage)) return;
+      ui.page = nextPage;
+      rerender();
+      return;
+    }
+
+    if (action === "edit-enter") {
+      enterEdit();
+      return;
+    }
+
+    if (action === "edit-cancel") {
+      cancelEdit();
+      return;
+    }
+
+    if (action === "edit-save") {
+      saveEdit();
+      return;
+    }
+
+    if (action === "pdf-download") {
+      runPdfExport("download", actionEl);
+      return;
+    }
+
+    if (action === "pdf-share") {
+      runPdfExport("share", actionEl);
+      return;
+    }
+
+    if (action === "new-estimate") {
+      if (ui.editing) cancelEdit();
+      state = mutate(state, (s) => {
+        const n = s.estimates.length + 1;
+        const est = makeEmptyEstimate(`Смета #${n}`);
+        s.estimates.unshift(est);
+        s.selectedId = est.id;
+      });
+      rerender();
+      closeSidebar();
+      return;
+    }
+
+    if (action === "select-estimate") {
+      const id = actionEl.dataset.id;
+      if (!id) return;
+      if (ui.editing) cancelEdit();
+      state = mutate(state, (s) => {
+        s.selectedId = id;
+      });
+      rerender();
+      closeSidebar();
+      return;
+    }
+
+    if (action === "add-row") {
+      if (!ui.editing || !ui.draft) return;
+      ui.draft.items.push(makeEmptyItem());
+      rerender();
+      return;
+    }
+
+    if (action === "add-material") {
+      if (!ui.editing || !ui.draft) return;
+      ui.draft.materials.push(makeEmptyMaterial());
+      rerender();
+      return;
+    }
+
+    if (action === "add-stage") {
+      if (!ui.editing || !ui.draft) return;
+      ui.draft.paymentStages.push(makeEmptyStage());
+      rerender();
+      return;
+    }
+
+    if (action === "draft-delete-row") {
+      const id = actionEl.dataset.id;
+      if (!id) return;
+      if (!ui.editing || !ui.draft) return;
+      ui.draft.items = ui.draft.items.filter((it) => it.id !== id);
+      if (ui.draft.items.length === 0) ui.draft.items = [makeEmptyItem()];
+      rerender();
+      return;
+    }
+
+    if (action === "draft-delete-material") {
+      const id = actionEl.dataset.id;
+      if (!id) return;
+      if (!ui.editing || !ui.draft) return;
+      ui.draft.materials = ui.draft.materials.filter((it) => it.id !== id);
+      if (ui.draft.materials.length === 0) ui.draft.materials = [makeEmptyMaterial()];
+      rerender();
+      return;
+    }
+
+    if (action === "draft-delete-stage") {
+      const id = actionEl.dataset.id;
+      if (!id) return;
+      if (!ui.editing || !ui.draft) return;
+      ui.draft.paymentStages = ui.draft.paymentStages.filter((it) => it.id !== id);
+      if (ui.draft.paymentStages.length === 0) ui.draft.paymentStages = [makeEmptyStage()];
+      rerender();
+      return;
+    }
+
+    if (action === "delete-estimate") {
+      const ok = confirm("Удалить эту смету? Это действие нельзя отменить.");
+      if (!ok) return;
+      if (ui.editing) cancelEdit();
+      state = mutate(state, (s) => {
+        s.estimates = s.estimates.filter((x) => x.id !== s.selectedId);
+        if (s.estimates.length === 0) {
+          const est = makeEmptyEstimate("Смета #1");
+          s.estimates = [est];
+          s.selectedId = est.id;
+        } else {
+          s.selectedId = s.estimates[0].id;
+        }
+      });
+      rerender();
+    }
+  });
+
+  const sidebar = document.getElementById("sidebar");
+  if (sidebar) {
+    sidebar.addEventListener("click", (e) => {
+      if (!sidebar.classList.contains("open")) return;
+      if (e.target === sidebar) closeSidebar();
+    });
+  }
+
+  document.addEventListener("input", (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLInputElement) && !(t instanceof HTMLTextAreaElement)) return;
+    const action = t.dataset.action;
+    if (!action) return;
+
+    if (!ui.editing || !ui.draft) return;
+
+    if (action === "draft-edit") {
+      const field = t.dataset.field;
+      if (!field) return;
+      if (field === "name") ui.draft.name = t.value.trim() || "Без названия";
+      if (field === "customer") ui.draft.customer = t.value;
+      if (field === "executor") ui.draft.executor = t.value;
+      const top = document.querySelector('[data-slot="topbar-title"]');
+      if (top && field === "name") top.textContent = ui.draft.name;
+      const activeName = document.querySelector(".estimate-item.active .name");
+      if (activeName && field === "name") activeName.textContent = ui.draft.name;
+      return;
+    }
+
+    if (action === "draft-item") {
+      const id = t.dataset.id;
+      const field = t.dataset.field;
+      if (!id || !field) return;
+      const item = ui.draft.items.find((it) => it.id === id);
+      if (!item) return;
+      if (field === "name") item.name = t.value;
+      if (field === "unit") item.unit = t.value;
+      autosizeTextarea(t);
+      return;
+    }
+
+    if (action === "draft-material") {
+      const id = t.dataset.id;
+      const field = t.dataset.field;
+      if (!id || !field) return;
+      const item = ui.draft.materials.find((it) => it.id === id);
+      if (!item) return;
+      if (field === "name") item.name = t.value;
+      autosizeTextarea(t);
+      return;
+    }
+
+    if (action === "draft-stage") {
+      const id = t.dataset.id;
+      const field = t.dataset.field;
+      if (!id || !field) return;
+      const item = ui.draft.paymentStages.find((it) => it.id === id);
+      if (!item) return;
+      if (field === "name") item.name = t.value;
+      autosizeTextarea(t);
+      return;
+    }
+
+    if (action === "draft-item-num") {
+      const id = t.dataset.id;
+      const field = t.dataset.field;
+      if (!id || !field) return;
+      const item = ui.draft.items.find((it) => it.id === id);
+      if (!item) return;
+      const value = clampToNumber(t.value);
+      if (field === "price") item.price = value;
+      if (field === "qty") item.qty = value;
+      updateSumAndTotalInDom(ui.draft, id);
+      return;
+    }
+
+    if (action === "draft-material-num") {
+      const id = t.dataset.id;
+      const field = t.dataset.field;
+      if (!id || !field) return;
+      const item = ui.draft.materials.find((it) => it.id === id);
+      if (!item) return;
+      if (field === "qty") item.qty = clampToNumber(t.value);
+      return;
+    }
+
+    if (action === "draft-stage-num") {
+      const id = t.dataset.id;
+      const field = t.dataset.field;
+      if (!id || !field) return;
+      const item = ui.draft.paymentStages.find((it) => it.id === id);
+      if (!item) return;
+      if (field === "percent") item.percent = clampToNumber(t.value);
+      updatePaymentAmountsInDom(ui.draft);
+    }
+  });
+
+  /* При фокусе — выделить всё: новый ввод сразу заменяет старое значение */
+  document.addEventListener("focusin", (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLInputElement) && !(t instanceof HTMLTextAreaElement)) return;
+    const a = t.dataset.action;
+    if (
+      a !== "draft-item" &&
+      a !== "draft-item-num" &&
+      a !== "draft-edit" &&
+      a !== "draft-material" &&
+      a !== "draft-material-num" &&
+      a !== "draft-stage" &&
+      a !== "draft-stage-num"
+    )
+      return;
+    requestAnimationFrame(() => {
+      try {
+        t.select();
+      } catch {
+        /* Safari / type=number */
+      }
+    });
+  });
+}
+
+try {
+  main();
+} catch (err) {
+  const msg = err instanceof Error ? err.message : String(err);
+  const box = document.createElement("div");
+  box.style.cssText = "padding:24px 16px;font:16px/1.4 -apple-system,sans-serif;color:#111";
+  box.textContent = `Не удалось запустить приложение: ${msg}`;
+  document.body.prepend(box);
+}
+

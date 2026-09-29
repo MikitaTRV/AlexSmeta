@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Сметы</title>
+    <meta name="description" content="Интерфейс смет для GitHub Pages" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="mode-mobile">
+    <div class="layout">
+      <aside class="sidebar" id="sidebar" aria-label="Список смет">
+        <div class="sidebar-panel">
+          <div class="sidebar-header">
+            <h1>Сметы</h1>
+            <div class="header-actions">
+              <button class="btn btn-icon" type="button" data-action="close-sidebar" title="Закрыть">✕</button>
+            </div>
+          </div>
+          <div class="estimates-list" data-slot="estimate-list" role="list"></div>
+          <div class="sidebar-footer">
+            <button class="btn btn-primary btn-block" type="button" data-action="new-estimate">+ Новая смета</button>
+            <div class="sidebar-note">
+              Сохранение в браузере (localStorage).<br />
+              Версия: <span data-slot="site-version">—</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="content" aria-label="Редактор сметы">
+        <div class="topbar">
+          <button class="btn btn-icon menu-btn" type="button" data-action="toggle-sidebar" title="Список смет">
+            ☰
+          </button>
+          <div class="topbar-title" data-slot="topbar-title">Смета</div>
+          <div class="topbar-actions">
+            <button class="btn btn-icon" type="button" data-action="refresh" title="Обновить">↻</button>
+          </div>
+        </div>
+
+        <div class="content-empty" data-slot="empty-state">
+          <div class="icon" aria-hidden="true">📋</div>
+          <div>Выберите смету слева или создайте новую</div>
+          <button class="btn btn-primary" type="button" data-action="new-estimate">+ Создать смету</button>
+        </div>
+
+        <section class="doc" data-slot="doc" style="display: none">
+          <div class="docActions" data-slot="doc-actions">
+            <button class="btn" type="button" data-action="pdf-download" title="Скачать PDF">Скачать PDF</button>
+            <button class="btn" type="button" data-action="pdf-share" title="Отправить PDF файлом" data-slot="pdf-share-btn" style="display:none">Отправить</button>
+            <button class="btn btn-primary" type="button" data-action="edit-enter">Редактировать</button>
+            <button class="btn btn-primary" type="button" data-action="edit-save" style="display:none">Сохранить</button>
+            <button class="btn" type="button" data-action="edit-cancel" style="display:none">Отменить</button>
+          </div>
+
+          <h1 class="docTitle" data-slot="doc-title"></h1>
+
+          <nav class="page-tabs" data-slot="page-tabs" role="tablist" aria-label="Разделы сметы">
+            <button class="page-tab" type="button" role="tab" data-action="set-page" data-page="works">Смета</button>
+            <button class="page-tab" type="button" role="tab" data-action="set-page" data-page="materials">Материалы</button>
+            <button class="page-tab" type="button" role="tab" data-action="set-page" data-page="payments">Этапы оплаты</button>
+          </nav>
+
+          <div data-slot="page-works">
+            <table class="smeta" data-slot="items-table" aria-label="Таблица сметы"></table>
+            <div class="actions-bar" data-slot="edit-only-actions" style="display:none">
+              <button class="btn btn-add btn-block" type="button" data-action="add-row">+ Добавить строку</button>
+            </div>
+            <div class="total-bar" data-slot="editor-footer"></div>
+            <div class="sign" data-slot="sign"></div>
+          </div>
+
+          <div data-slot="page-materials" hidden>
+            <table class="smeta" data-slot="materials-table" aria-label="Таблица материалов"></table>
+            <div class="actions-bar" data-slot="edit-only-materials" style="display:none">
+              <button class="btn btn-add btn-block" type="button" data-action="add-material">+ Добавить материал</button>
+            </div>
+          </div>
+
+          <div data-slot="page-payments" hidden>
+            <table class="smeta" data-slot="payments-table" aria-label="Таблица этапов оплаты"></table>
+            <div class="actions-bar" data-slot="edit-only-payments" style="display:none">
+              <button class="btn btn-add btn-block" type="button" data-action="add-stage">+ Добавить этап</button>
+            </div>
+            <div class="total-bar" data-slot="payments-footer"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" defer></script>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
