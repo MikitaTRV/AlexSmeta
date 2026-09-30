@@ -1,5 +1,5 @@
 const STORAGE_KEY = "alexsmeta.contracts.v1";
-const SITE_VERSION = "1.0.1";
+const SITE_VERSION = "1.0.2";
 
 const MONTH_NUM = [
   "января",
@@ -146,71 +146,6 @@ Email: client@example.com
 Телефон: +375 33 000-00-00
 Email: ivan@example.com
 Банковские реквизиты: р/с BY11BPSB30120000000000000000, ОАО «БПС-Сбербанк», БИК BPSBBY2X`;
-
-const CLAUSES = [
-  "1. Предмет договора",
-  "1.1. Исполнитель обязуется по заданию Заказчика оказывать рекламные, маркетинговые и услуги по продвижению товаров, услуг, бренда, интернет-магазина, аккаунтов и иных объектов деятельности Заказчика, а Заказчик обязуется принимать оказанные услуги и выплачивать Исполнителю вознаграждение.",
-  "1.2. Исполнитель вправе осуществлять продвижение товаров и услуг, привлечение потенциальных покупателей, создание и размещение рекламных материалов, публикаций, обзоров и рекомендаций, продвижение посредством социальных сетей и иных интернет-площадок, использование промокодов, реферальных ссылок и иных инструментов отслеживания продаж.",
-  "1.3. Исполнитель самостоятельно определяет способы, последовательность и методы оказания услуг, если иное не согласовано Сторонами.",
-  "1.4. Размер вознаграждения, рекламируемые товары, промокоды, ссылки и способы отслеживания продаж могут согласовываться в настоящем Договоре, приложениях, электронной почте или согласованных мессенджерах.",
-  "1.5. Электронная переписка признаётся надлежащим способом согласования рабочих условий, если из неё однозначно следует содержание договорённости.",
-  "2. Права и обязанности Исполнителя",
-  "2.1. Исполнитель обязуется добросовестно оказывать согласованные услуги, использовать согласованные способы идентификации привлечённых покупателей, предоставлять необходимую информацию о проведённых рекламных мероприятиях и соблюдать конфиденциальность.",
-  "2.2. Исполнитель вправе самостоятельно выбирать способы продвижения; получать необходимую информацию и материалы; запрашивать сведения о количестве и стоимости привлечённых продаж; использовать собственные рекламные площадки и аккаунты; приостанавливать продвижение при нарушении порядка выплаты вознаграждения или непредоставлении необходимой информации.",
-  "3. Права и обязанности Заказчика",
-  "3.1. Заказчик обязуется предоставлять достоверную информацию о товарах и услугах, цены, характеристики, наличие и условия продажи; предоставлять промокоды, реферальные ссылки и иные инструменты отслеживания; своевременно предоставлять информацию о продажах; не изменять без уведомления Исполнителя способы отслеживания, если это препятствует определению привлечённых продаж; своевременно выплачивать вознаграждение.",
-  "3.2. Заказчик вправе получать информацию о продвижении, предлагать товары или услуги для продвижения и требовать прекращения использования отдельных рекламных материалов.",
-  "4. Вознаграждение Исполнителя",
-  "4.1. Вознаграждение Исполнителя устанавливается исключительно в виде процента от стоимости продаж, привлечённых в результате оказания услуг. Фиксированная плата за услуги по настоящему Договору не устанавливается.",
-  "4.2. Размер вознаграждения составляет {{percent}} от стоимости соответствующих продаж.",
-  "4.3. Привлечённой продажей считается продажа покупателю, совершённая с использованием предоставленного Исполнителем промокода, реферальной ссылки либо иного согласованного способа идентификации.",
-  "4.4. Вознаграждение рассчитывается исходя из фактически оплаченной покупателем суммы.",
-  "4.5. Отменённые и полностью возвращённые заказы, а также возвращённые покупателю суммы, в расчёт не включаются.",
-  "4.6. При частичном возврате вознаграждение пересчитывается пропорционально фактически сохранённой Заказчиком сумме.",
-  "4.7. Если вознаграждение уже выплачено, а заказ впоследствии возвращён, соответствующая сумма учитывается при следующем расчёте.",
-  "4.8. Каждый согласованный способ отслеживания является основанием для отнесения продажи к привлечённым Исполнителем.",
-  "5. Учёт и подтверждение продаж",
-  "5.1. Заказчик обязан вести учёт продаж, совершённых с использованием предоставленных Исполнителем инструментов отслеживания.",
-  "5.2. Не позднее {{reportDay}} числа месяца, следующего за расчётным, Заказчик предоставляет Исполнителю информацию о количестве привлечённых продаж, их стоимости, возвратах и отменах и итоговой сумме для расчёта вознаграждения.",
-  "5.3. По требованию Исполнителя Заказчик предоставляет сведения, позволяющие проверить правильность расчёта вознаграждения, без раскрытия персональных данных покупателей сверх необходимого.",
-  "5.4. Данные автоматизированных систем отслеживания продаж могут использоваться для расчёта вознаграждения.",
-  "5.5. Заказчик не вправе умышленно скрывать, удалять или изменять сведения о продажах, совершённых с использованием инструментов Исполнителя.",
-  "6. Порядок выплаты вознаграждения",
-  "6.1. Расчётным периодом является календарный месяц, если Стороны не согласовали иной период.",
-  "6.2. Вознаграждение выплачивается не позднее {{payDay}} числа месяца, следующего за расчётным.",
-  "6.3. Выплата производится на банковский счёт Исполнителя либо иным способом, не противоречащим законодательству Республики Беларусь.",
-  "6.4. Исполнитель самостоятельно исполняет налоговые обязательства в соответствии с законодательством Республики Беларусь.",
-  "7. Результаты продвижения",
-  "7.1. Исполнитель не гарантирует определённое количество продаж, заказов, заявок, подписчиков, просмотров, охватов или иной конкретный коммерческий результат.",
-  "7.2. Вознаграждение зависит от фактического количества и стоимости привлечённых продаж.",
-  "7.3. Результативность может зависеть от цены, качества и характеристик товаров или услуг, спроса, наличия товара, условий доставки, репутации Заказчика, сезонности, действий конкурентов, алгоритмов социальных сетей и иных обстоятельств, не зависящих от Исполнителя.",
-  "7.4. Исполнитель не несёт ответственности за невозможность продажи вследствие отсутствия товара, изменения цен, прекращения работы сайта или аккаунта Заказчика, технических проблем либо иных обстоятельств, возникших не по вине Исполнителя.",
-  "8. Интеллектуальная собственность",
-  "8.1. Если Исполнитель создаёт рекламные тексты, изображения, видео, дизайн или иные материалы, порядок передачи прав на их использование определяется Сторонами отдельно.",
-  "8.2. Если иное не согласовано, после полной выплаты вознаграждения Заказчик получает право использовать созданные специально для него материалы в целях продвижения собственной деятельности.",
-  "8.3. Исполнитель вправе использовать созданные им материалы в портфолио, если Заказчик письменно не запретил такое использование.",
-  "9. Ответственность сторон",
-  "9.1. Стороны несут ответственность в соответствии с законодательством Республики Беларусь и настоящим Договором.",
-  "9.2. Заказчик отвечает за достоверность информации о товарах и услугах и их законность.",
-  "9.3. Исполнитель не отвечает за последствия использования недостоверной информации, предоставленной Заказчиком.",
-  "9.4. Исполнитель не отвечает за блокировку, изменение алгоритмов или прекращение работы сторонних сервисов, если это произошло не по его вине.",
-  "10. Срок действия и расторжение",
-  "10.1. Договор вступает в силу с момента подписания и действует до {{endDate}}",
-  "10.2. Каждая Сторона вправе досрочно расторгнуть Договор, уведомив другую Сторону не менее чем за {{noticeDays}} календарных дней.",
-  "10.3. При прекращении Договора Заказчик обязан выплатить вознаграждение за продажи, совершённые до даты прекращения, а также за продажи, привлечённые Исполнителем до даты прекращения, но оплаченные покупателями после неё, если продажа подтверждается согласованным инструментом отслеживания.",
-  "10.4. После прекращения Договора Заказчик обязан сохранить сведения, необходимые для определения таких продаж.",
-  "11. Конфиденциальность",
-  "11.1. Стороны обязуются не разглашать третьим лицам конфиденциальную информацию, полученную в связи с исполнением Договора.",
-  "11.2. Информация, находящаяся в открытом доступе, конфиденциальной не считается.",
-  "12. Электронное взаимодействие",
-  "12.1. Стороны признают юридически значимым обмен информацией посредством электронной почты и согласованных мессенджеров.",
-  "12.2. Размер процента, рекламируемые товары, промокоды, ссылки и иные рабочие условия могут согласовываться посредством электронной переписки.",
-  "12.3. Сообщения с согласованных номеров телефонов и адресов электронной почты признаются направленными соответствующей Стороной, если не доказано иное.",
-  "13. Разрешение споров",
-  "13.1. Стороны стремятся разрешать споры путём переговоров.",
-  "13.2. При невозможности урегулирования спор разрешается в порядке, установленном законодательством Республики Беларусь.",
-  "14. Реквизиты и подписи сторон",
-];
 
 const FORM_SECTIONS = [
   {
@@ -747,91 +682,8 @@ function missingLabels(contract) {
   return items.filter(([path]) => !String(getPath(contract, path) ?? "").trim()).map(([, label]) => label);
 }
 
-function fill(value, placeholder = "__________") {
-  const v = String(value ?? "").trim();
-  if (!v) return `<span class="blank">${escapeHtml(placeholder)}</span>`;
-  return `<span class="filled">${escapeHtml(v)}</span>`;
-}
-
-function dateHtml(raw) {
-  const parsed = parseDate(raw);
-  if (!parsed) {
-    if (String(raw ?? "").trim()) return `${fill(String(raw).trim())}`;
-    return `«${fill("", "___")}» ${fill("", "__________")} 20${fill("", "__")} г.`;
-  }
-  return `«${fill(parsed.day, "___")}» ${fill(parsed.month, "__________")} ${fill(parsed.year, "20__")} г.`;
-}
-
-function tokenHtml(name, contract) {
-  if (name === "percent") return `${fill(contract.percent, "_____")} %`;
-  if (name === "reportDay" || name === "payDay" || name === "noticeDays") return fill(contract[name], "___");
-  if (name === "endDate") return dateHtml(contract.endDate);
-  return "";
-}
-
-function renderClause(text, contract) {
-  return text
-    .split(/(\{\{[a-zA-Z]+\}\})/)
-    .map((part) => {
-      const token = part.match(/^\{\{([a-zA-Z]+)\}\}$/);
-      if (!token) return escapeHtml(part);
-      return tokenHtml(token[1], contract);
-    })
-    .join("");
-}
-
-function isHeading(text) {
-  return /^\d+\.\s+\D/.test(text);
-}
-
-function preambleHtml(contract) {
-  const customer = fill(contract.customer.name);
-  const executor = fill(contract.executor.name);
-  if (contract.template === "ip") {
-    return `${customer}, именуемый в дальнейшем «Заказчик», с одной стороны, и Индивидуальный предприниматель ${executor}, УНП ${fill(contract.executor.unp)}, именуемый в дальнейшем «Исполнитель», с другой стороны, совместно именуемые «Стороны», заключили настоящий Договор.`;
-  }
-  return `${customer}, именуемый в дальнейшем «Заказчик», с одной стороны, и ${executor}, паспорт: ${fill(contract.executor.passport)}, УНП: ${fill(contract.executor.unp)}, применяющий специальный налоговый режим «Налог на профессиональный доход», именуемый в дальнейшем «Исполнитель», с другой стороны, совместно именуемые «Стороны», заключили настоящий Договор.`;
-}
-
-function partyRequisites(title, lines) {
-  return `<div class="req-col"><p class="clause clause-h">${title}</p>${lines.map((line) => `<p class="clause">${line}</p>`).join("")}</div>`;
-}
-
-function requisitesHtml(contract) {
-  const customer = contract.customer;
-  const executor = contract.executor;
-  const customerCol = partyRequisites("ЗАКАЗЧИК", [
-    `ФИО / наименование: ${fill(customer.name)}`,
-    `УНП: ${fill(customer.unp)}`,
-    `Адрес: ${fill(customer.address)}`,
-    `Телефон: ${fill(customer.phone)}`,
-    `E-mail: ${fill(customer.email)}`,
-    `Банковские реквизиты: ${fill(customer.bank)}`,
-    `Подпись: ${fill("", "_________________________")}`,
-  ]);
-  const executorLines =
-    contract.template === "ip"
-      ? [
-          `ИП ${fill(executor.name)}`,
-          `УНП: ${fill(executor.unp)}`,
-          `Адрес: ${fill(executor.address)}`,
-          `Телефон: ${fill(executor.phone)}`,
-          `E-mail: ${fill(executor.email)}`,
-          `Банковские реквизиты: ${fill(executor.bank)}`,
-          `Подпись: ${fill("", "_________________________")}`,
-        ]
-      : [
-          `ФИО: ${fill(executor.name)}`,
-          `УНП: ${fill(executor.unp)}`,
-          `Паспорт: ${fill(executor.passport)}`,
-          `Адрес: ${fill(executor.address)}`,
-          `Телефон: ${fill(executor.phone)}`,
-          `E-mail: ${fill(executor.email)}`,
-          `Банковские реквизиты: ${fill(executor.bank)}`,
-          "Налоговый режим: налог на профессиональный доход",
-          `Подпись: ${fill("", "_________________________")}`,
-        ];
-  return `<div class="req-grid">${customerCol}${partyRequisites("ИСПОЛНИТЕЛЬ", executorLines)}</div>`;
+function hasSource(contract) {
+  return Array.isArray(contract?.sourceParagraphs) && contract.sourceParagraphs.length > 0;
 }
 
 const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
@@ -1138,26 +990,12 @@ async function readContractFile(file) {
 }
 
 function contractBodyHtml(contract) {
-  if (Array.isArray(contract.sourceParagraphs) && contract.sourceParagraphs.length) return extractedBodyHtml(contract);
-  const clauses = CLAUSES.map((text) => {
-    const cls = isHeading(text) ? "clause clause-h" : "clause";
-    return `<p class="${cls}">${renderClause(text, contract)}</p>`;
-  }).join("");
-  return `
-    <h1 class="contract-title">ДОГОВОР № ${fill(contract.number, "___")}</h1>
-    <p class="contract-subtitle">ВОЗМЕЗДНОГО ОКАЗАНИЯ РЕКЛАМНЫХ И МАРКЕТИНГОВЫХ УСЛУГ</p>
-    <div class="contract-meta">
-      <div>г. ${fill(contract.city, "____________")}</div>
-      <div>${dateHtml(contract.date)}</div>
-    </div>
-    <p class="clause">${preambleHtml(contract)}</p>
-    ${clauses}
-    ${requisitesHtml(contract)}
-  `;
+  return hasSource(contract) ? extractedBodyHtml(contract) : "";
 }
 
 function editorHtml(draft, pasteText, report) {
   const reportClass = report?.kind ? `parse-report is-${report.kind}` : "parse-report";
+  const loaded = hasSource(draft);
   const sections = FORM_SECTIONS.map((section) => {
     const fields = section.fields
       .filter((field) => !field.npdOnly || draft.template !== "ip")
@@ -1176,7 +1014,11 @@ function editorHtml(draft, pasteText, report) {
     draft.template === "ip"
       ? "В тексте договора исполнитель указан как индивидуальный предприниматель."
       : "В тексте договора исполнитель указан как плательщик налога на профессиональный доход. Нужен паспорт.";
-  return `
+  const fileHint = loaded
+    ? "Можно заменить файл или убрать его. Уже введённые данные сохранятся и подставятся в новый документ."
+    : "Нужен Word (.docx) или PDF, в котором текст можно прочитать. Скан и фото не подойдут. После загрузки появится поле для данных: они встанут в подписанные пустые места.";
+  const filler = loaded
+    ? `
     <div class="paste-panel">
       <h2>Вставьте данные</h2>
       <p class="paste-hint">Серым показаны все нужные поля. Вставьте свои данные поверх — подсказка скроется. Уже заполненное в договоре не стирается, если этого поля нет в тексте.</p>
@@ -1188,28 +1030,47 @@ function editorHtml(draft, pasteText, report) {
         <button class="btn btn-primary" type="button" data-action="apply-paste">Заполнить договор</button>
         <button class="btn" type="button" data-action="insert-sample">Образец</button>
       </div>
-      <div class="upload-row">
-        <label class="btn">
-          Загрузить Word или PDF
-          <input class="file-input" type="file" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" data-action="upload-file" />
-        </label>
-        ${draft.sourceParagraphs?.length ? `<button class="btn" type="button" data-action="clear-source">Убрать файл</button>` : ""}
-      </div>
-      <p class="paste-hint">Берётся только текст, который можно прочитать в Word (.docx) или PDF. Скан и фото не подойдут. Из прочитанного собирается новый договор, а данные из поля встают в подписанные пустые места.</p>
-      <p class="${reportClass}" data-slot="parse-report">${escapeHtml(report?.text ?? "")}</p>
     </div>
     <nav class="page-tabs" role="tablist" aria-label="Тип исполнителя">
       <button class="page-tab ${draft.template !== "ip" ? "is-active" : ""}" type="button" data-action="set-template" data-template="npd">Самозанятый</button>
       <button class="page-tab ${draft.template === "ip" ? "is-active" : ""}" type="button" data-action="set-template" data-template="ip">ИП</button>
     </nav>
     <p class="template-note">${escapeHtml(note)}</p>
-    ${sections}
+    ${sections}`
+    : "";
+  return `
+    <div class="paste-panel">
+      <h2>${loaded ? "Файл договора" : "Загрузите договор"}</h2>
+      <p class="paste-hint">${fileHint}</p>
+      <div class="upload-row">
+        <label class="btn${loaded ? "" : " btn-primary"}">
+          ${loaded ? "Заменить файл" : "Загрузить Word или PDF"}
+          <input class="file-input" type="file" accept=".docx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" data-action="upload-file" />
+        </label>
+        ${loaded ? `<button class="btn" type="button" data-action="clear-source">Убрать файл</button>` : ""}
+      </div>
+      <p class="${reportClass}" data-slot="parse-report">${escapeHtml(report?.text ?? "")}</p>
+    </div>
+    ${filler}
   `;
 }
 
-function paintPaper(view) {
+function paintPaper(view, editing) {
   const missing = qs('[data-slot="missing"]');
   const source = qs('[data-slot="source-note"]');
+  const paper = qs('[data-slot="paper"]');
+  const blank = qs('[data-slot="paper-empty"]');
+  const loaded = hasSource(view);
+  paper.hidden = !loaded;
+  blank.hidden = loaded || editing;
+  if (!loaded) {
+    missing.hidden = true;
+    missing.textContent = "";
+    source.hidden = true;
+    source.textContent = "";
+    paper.innerHTML = "";
+    return;
+  }
   const gaps = missingLabels(view);
   if (gaps.length) {
     missing.hidden = false;
@@ -1221,7 +1082,7 @@ function paintPaper(view) {
   const status = sourceStatus(view);
   source.hidden = !status;
   source.textContent = status;
-  qs('[data-slot="paper"]').innerHTML = contractBodyHtml(view);
+  paper.innerHTML = contractBodyHtml(view);
 }
 
 function selectedContract(state) {
@@ -1267,13 +1128,15 @@ function render(state, ui) {
   title.textContent = contractTitle(view);
 
   const editing = Boolean(ui.editing && ui.draft);
+  const loaded = hasSource(view);
   qs('[data-action="edit-enter"]', doc).style.display = editing ? "none" : "";
   qs('[data-action="edit-save"]', doc).style.display = editing ? "" : "none";
   qs('[data-action="edit-cancel"]', doc).style.display = editing ? "" : "none";
+  qs('[data-action="pdf-download"]', doc).style.display = loaded ? "" : "none";
   editor.innerHTML = editing ? editorHtml(ui.draft, ui.pasteText, ui.report) : "";
   editor.hidden = !editing;
 
-  paintPaper(view);
+  paintPaper(view, editing);
 
   if (ui.focusPaste) {
     const area = editor.querySelector('[data-action="paste-text"]');
@@ -1299,8 +1162,10 @@ function canSharePdfFile() {
 
 function updatePdfShareButtonVisibility() {
   const btn = document.querySelector('[data-slot="pdf-share-btn"]');
+  const download = document.querySelector('[data-action="pdf-download"]');
   if (!btn) return;
-  btn.style.display = canSharePdfFile() ? "inline-flex" : "none";
+  const loaded = download && download.style.display !== "none";
+  btn.style.display = loaded && canSharePdfFile() ? "inline-flex" : "none";
 }
 
 async function createPdfBlob(contract) {
@@ -1419,7 +1284,7 @@ function main() {
       state.contracts.unshift(contract);
       state.selectedId = contract.id;
       saveState(state);
-      enterEdit(contract, true);
+      enterEdit(contract, false);
       closeSidebar();
       return;
     }
@@ -1435,7 +1300,7 @@ function main() {
     }
     if (action === "edit-enter") {
       const current = selectedContract(state);
-      if (current) enterEdit(current, true);
+      if (current) enterEdit(current, hasSource(current));
       return;
     }
     if (action === "edit-cancel") {
@@ -1473,7 +1338,7 @@ function main() {
       ui.draft.sourceParagraphs = [];
       ui.draft.sourceFileName = "";
       ui.draft.sourceNote = "";
-      ui.report = { kind: "ok", text: "Файл убран. Снова показан стандартный договор." };
+      ui.report = { kind: "ok", text: "Файл убран. Загрузите договор заново." };
       rerender();
       return;
     }
@@ -1512,6 +1377,10 @@ function main() {
     if (action === "pdf-download" || action === "pdf-share") {
       const current = ui.editing && ui.draft ? ui.draft : selectedContract(state);
       if (!current) return;
+      if (!hasSource(current)) {
+        alert("Сначала загрузите договор в Word или PDF.");
+        return;
+      }
       if (ui.editing) persistDraft();
       setPdfButtonsBusy(true);
       createPdfBlob(current)

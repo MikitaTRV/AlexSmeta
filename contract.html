@@ -6,7 +6,7 @@
     <title>Договоры</title>
     <meta name="description" content="Заполнение договора на продвижение и рекламу" />
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./contract.css?v=1.0.1" />
+    <link rel="stylesheet" href="./contract.css?v=1.0.2" />
   </head>
   <body class="mode-mobile page-contract">
     <div class="layout">
@@ -61,7 +61,11 @@
           <div data-slot="editor"></div>
           <p class="missing-note" data-slot="missing" hidden></p>
           <p class="source-note" data-slot="source-note" hidden></p>
-          <article class="contract-paper" data-slot="paper"></article>
+          <div class="paper-empty" data-slot="paper-empty" hidden>
+            <div class="icon" aria-hidden="true">📄</div>
+            <p>Договор появится после загрузки Word (.docx) или PDF. Нажмите «Редактировать».</p>
+          </div>
+          <article class="contract-paper" data-slot="paper" hidden></article>
         </section>
       </main>
     </div>
@@ -69,6 +73,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
-    <script src="./contract.js?v=1.0.1" defer></script>
+    <script src="./contract.js?v=1.0.2" defer></script>
   </body>
 </html>
