@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Договоры</title>
+    <meta name="description" content="Заполнение договора на продвижение и рекламу" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./contract.css" />
+  </head>
+  <body class="mode-mobile page-contract">
+    <div class="layout">
+      <aside class="sidebar" id="sidebar" aria-label="Список договоров">
+        <div class="sidebar-panel">
+          <div class="sidebar-header">
+            <div class="sidebar-brand">
+              <h1>Договоры</h1>
+              <a class="sidebar-switch" href="./index.html">Сметы</a>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-icon" type="button" data-action="close-sidebar" title="Закрыть">✕</button>
+            </div>
+          </div>
+          <div class="estimates-list" data-slot="contract-list" role="list"></div>
+          <div class="sidebar-footer">
+            <button class="btn btn-primary btn-block" type="button" data-action="new-contract">+ Новый договор</button>
+            <div class="sidebar-note">
+              Сохранение в браузере (localStorage).<br />
+              Версия: <span data-slot="site-version">—</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="content" aria-label="Договор">
+        <div class="topbar">
+          <button class="btn btn-icon menu-btn" type="button" data-action="toggle-sidebar" title="Список договоров">☰</button>
+          <div class="topbar-title" data-slot="topbar-title">Договор</div>
+          <div class="topbar-actions">
+            <a class="btn btn-nav" href="./index.html">Сметы</a>
+            <button class="btn btn-icon" type="button" data-action="refresh" title="Обновить">↻</button>
+          </div>
+        </div>
+
+        <div class="content-empty" data-slot="empty-state">
+          <div class="icon" aria-hidden="true">📄</div>
+          <div>Выберите договор слева или создайте новый</div>
+          <button class="btn btn-primary" type="button" data-action="new-contract">+ Создать договор</button>
+        </div>
+
+        <section class="doc" data-slot="doc" style="display: none">
+          <div class="docActions" data-slot="doc-actions">
+            <button class="btn" type="button" data-action="pdf-download">Скачать PDF</button>
+            <button class="btn" type="button" data-action="pdf-share" data-slot="pdf-share-btn" style="display: none">Отправить</button>
+            <button class="btn btn-primary" type="button" data-action="edit-enter">Редактировать</button>
+            <button class="btn btn-primary" type="button" data-action="edit-save" style="display: none">Сохранить</button>
+            <button class="btn" type="button" data-action="edit-cancel" style="display: none">Отменить</button>
+            <button class="btn btn-danger" type="button" data-action="delete-contract">Удалить</button>
+          </div>
+
+          <div data-slot="editor"></div>
+          <p class="missing-note" data-slot="missing" hidden></p>
+          <p class="source-note" data-slot="source-note" hidden></p>
+          <article class="contract-paper" data-slot="paper"></article>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script src="./contract.js" defer></script>
+  </body>
+</html>

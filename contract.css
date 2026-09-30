@@ -1,0 +1,249 @@
+body.page-contract .content {
+  background: var(--bg);
+}
+
+body.page-contract .docActions {
+  position: sticky;
+  top: 54px;
+  z-index: 19;
+  background: var(--bg);
+  padding: 8px 0;
+}
+
+body.mode-mobile.page-contract .docActions {
+  top: 72px;
+}
+
+.paste-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+
+.paste-panel h2,
+.form-section h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.paste-hint {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.paste-field {
+  display: grid;
+}
+
+.paste-ghost,
+.paste-field textarea {
+  grid-area: 1 / 1;
+  margin: 0;
+  font: inherit;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.paste-ghost {
+  color: #9aa1a9;
+  pointer-events: none;
+  user-select: none;
+}
+
+.paste-field textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  resize: none;
+  color: var(--text);
+  background: transparent;
+  caret-color: var(--text);
+}
+
+.paste-field.has-value .paste-ghost {
+  display: none;
+}
+
+.paste-field.has-value textarea {
+  height: auto;
+  min-height: 220px;
+  resize: vertical;
+  background: #fff;
+}
+
+.paste-actions,
+.upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.source-note {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.parse-report {
+  margin: 10px 0 0;
+  font-size: 14px;
+}
+
+.parse-report.is-ok { color: var(--success); }
+.parse-report.is-warn { color: #8a5a00; }
+.parse-report.is-bad { color: var(--danger); }
+
+.template-note {
+  margin: -4px 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.form-section { margin: 0 0 16px; }
+
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.field-grid label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.field-grid .span-2 { grid-column: 1 / -1; }
+
+.field-grid input,
+.field-grid textarea {
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.field-grid textarea { min-height: 72px; resize: vertical; }
+
+.missing-note {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.contract-paper {
+  scroll-margin-top: 76px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 28px 22px 36px;
+  color: #111;
+  font-family: "Times New Roman", Times, "Liberation Serif", serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.contract-title {
+  margin: 0;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.contract-subtitle {
+  margin: 2px 0 16px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.contract-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 14px;
+}
+
+.clause {
+  margin: 0 0 8px;
+  text-align: justify;
+  white-space: pre-wrap;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.clause-h {
+  font-weight: 700;
+  text-align: left;
+  margin-top: 14px;
+}
+
+.filled {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.blank { color: #222; }
+
+.req-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-top: 8px;
+}
+
+.req-col {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.req-col .clause { margin-bottom: 4px; }
+
+.pdf-export-host .contract-pdf {
+  width: 680px;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0 8px 8px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.pdf-export-host .contract-pdf .contract-title { font-size: 16px; }
+.pdf-export-host .contract-pdf .contract-subtitle { font-size: 13px; margin-bottom: 10px; }
+
+@media (max-width: 720px) {
+  .field-grid,
+  .req-grid { grid-template-columns: 1fr; }
+  .contract-paper { padding: 18px 12px 24px; font-size: 15px; }
+  .contract-meta { flex-direction: column; gap: 4px; }
+}
