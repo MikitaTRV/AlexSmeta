@@ -10,6 +10,14 @@ body.page-contract .docActions {
   padding: 8px 0;
 }
 
+body.mode-mobile.page-contract .content {
+  padding: 0 0 16px;
+}
+
+body.mode-mobile.page-contract .doc {
+  padding: 10px 12px 24px;
+}
+
 body.mode-mobile.page-contract .docActions {
   top: 72px;
 }
@@ -183,11 +191,22 @@ body.mode-mobile.page-contract .docActions {
   font-size: 16px;
 }
 
-.contract-meta {
+.contract-meta,
+.contract-place-date {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  align-items: baseline;
+  gap: 4px 16px;
+  flex-wrap: wrap;
   margin: 0 0 14px;
+  text-align: left;
+  white-space: normal;
+}
+
+.contract-meta > :last-child,
+.contract-date {
+  white-space: nowrap;
+  margin-left: auto;
 }
 
 .clause {
@@ -243,7 +262,52 @@ body.mode-mobile.page-contract .docActions {
 
 @media (max-width: 720px) {
   .field-grid,
-  .req-grid { grid-template-columns: 1fr; }
-  .contract-paper { padding: 18px 12px 24px; font-size: 15px; }
-  .contract-meta { flex-direction: column; gap: 4px; }
+  .contract-paper:not(.contract-pdf) .req-grid { grid-template-columns: 1fr; }
+
+  body.page-contract .docActions {
+    justify-content: stretch;
+    gap: 8px;
+  }
+
+  body.page-contract .docActions .btn {
+    flex: 1 1 calc(50% - 8px);
+    width: auto;
+    min-height: 44px;
+    padding: 10px 8px;
+    font-size: 15px;
+  }
+
+  body.page-contract .paste-actions .btn,
+  body.page-contract .upload-row .btn {
+    flex: 1 1 calc(50% - 8px);
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 15px;
+  }
+
+  .paste-field,
+  .paste-hint,
+  .source-note,
+  .field-grid label {
+    font-size: 15px;
+  }
+
+  .contract-paper:not(.contract-pdf) {
+    padding: 16px 12px 22px;
+    font-size: 15px;
+  }
+
+  .contract-paper:not(.contract-pdf) .contract-subtitle {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .contract-paper:not(.contract-pdf) .clause {
+    text-align: left;
+    overflow-wrap: break-word;
+  }
+
+  .contract-paper:not(.contract-pdf) .filled {
+    overflow-wrap: anywhere;
+  }
 }

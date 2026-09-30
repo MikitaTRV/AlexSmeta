@@ -1,5 +1,5 @@
 const STORAGE_KEY = "alexsmeta.contracts.v1";
-const SITE_VERSION = "1.0.0";
+const SITE_VERSION = "1.0.1";
 
 const MONTH_NUM = [
   "января",
@@ -957,9 +957,8 @@ function sourceStatus(contract) {
   if (!all.length) return "";
   const parts = splitContracts(all);
   const { labels } = fillParagraphs(activeSourceParagraphs(contract), contract);
-  const bits = [`Файл «${contract.sourceFileName || "без имени"}»: прочитано ${all.length} абзацев.`];
-  if (contract.sourceNote) bits.push(contract.sourceNote);
-  if (parts.length > 1) bits.push(`В файле несколько договоров (${parts.length}). Показан вариант «${templateLabel(contract.template)}».`);
+  const bits = [`Файл «${contract.sourceFileName || "без имени"}»: ${all.length} абзацев.`];
+  if (parts.length > 1) bits.push(`Показан вариант «${templateLabel(contract.template)}» из ${parts.length}.`);
   if (labels.length) bits.push(`Подставлено: ${labels.join(", ")}.`);
   else bits.push("В прочитанном тексте пока нечего подставить. Заполните поле и нажмите «Заполнить договор».");
   return bits.join(" ");
@@ -972,17 +971,35 @@ function textToHtml(text) {
     .join("");
 }
 
+function plainParagraph(text) {
+  return String(text).replace(/\u0001([\s\S]*?)\u0002/g, "$1").trim();
+}
+
 function extractedParagraphClass(text) {
-  const plain = text.replace(/\u0001([\s\S]*?)\u0002/g, "$1").trim();
+  const plain = plainParagraph(text);
   if (/^ДОГОВОР\s*№/i.test(plain)) return "contract-title";
   if (/^возмездного оказания/i.test(plain)) return "contract-subtitle";
+  if (/^г\.\s+\S/i.test(plain) && /20\d{2}/.test(plain)) return "contract-place-date";
   if (/^\d+\.\s+\D/.test(plain) || /^(заказчик|исполнитель)$/i.test(plain)) return "clause clause-h";
   return "clause";
 }
 
+function placeDateHtml(paragraph) {
+  const parts = String(paragraph).split(/\s{2,}/).filter((part) => part.trim());
+  if (parts.length < 2) return textToHtml(paragraph);
+  const date = parts.pop();
+  return `<span>${textToHtml(parts.join(" "))}</span><span class="contract-date">${textToHtml(date)}</span>`;
+}
+
 function extractedBodyHtml(contract) {
   const { paragraphs } = fillParagraphs(activeSourceParagraphs(contract), contract);
-  return paragraphs.map((paragraph) => `<p class="${extractedParagraphClass(paragraph)}">${textToHtml(paragraph)}</p>`).join("");
+  return paragraphs
+    .map((paragraph) => {
+      const cls = extractedParagraphClass(paragraph);
+      const inner = cls === "contract-place-date" ? placeDateHtml(paragraph) : textToHtml(paragraph);
+      return `<p class="${cls}">${inner}</p>`;
+    })
+    .join("");
 }
 
 function isWordNode(node, name) {
