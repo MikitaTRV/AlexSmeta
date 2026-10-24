@@ -800,15 +800,17 @@ function buildExportFooterHtml(estimate) {
   const customer = estimate.customer ?? "";
   const executor = estimate.executor ?? "";
   return `
-    <div class="x-total">
-      <div>Итого:</div>
-      <div class="val">${formatDisplayNumber(total)} ${escapeHtml(currency)}</div>
-    </div>
-    ${buildExportMaterialsTableHtml(estimate)}
-    ${buildExportPaymentsTableHtml(estimate)}
-    <div class="x-sign">
-      <div><div class="val">${escapeHtml(customer)}</div><div class="sline"></div><div class="lbl">Заказчик</div></div>
-      <div><div class="val">${escapeHtml(executor)}</div><div class="sline"></div><div class="lbl">Исполнитель</div></div>
+    <div class="x-export-footer">
+      <div class="x-total">
+        <div>Итого:</div>
+        <div class="val">${formatDisplayNumber(total)} ${escapeHtml(currency)}</div>
+      </div>
+      ${buildExportMaterialsTableHtml(estimate)}
+      ${buildExportPaymentsTableHtml(estimate)}
+      <div class="x-sign">
+        <div><div class="val">${escapeHtml(customer)}</div><div class="sline"></div><div class="lbl">Заказчик</div></div>
+        <div><div class="val">${escapeHtml(executor)}</div><div class="sline"></div><div class="lbl">Исполнитель</div></div>
+      </div>
     </div>
   `;
 }
@@ -940,10 +942,8 @@ async function measurePdfRowPages(estimate) {
   try {
     const titleH = measureEl.querySelector(".x-title")?.offsetHeight ?? 30;
     const theadH = measureEl.querySelector("thead")?.offsetHeight ?? 28;
-    const rowHeights = [...measureEl.querySelectorAll("tbody tr")].map((tr) => tr.offsetHeight);
-    const totalH = measureEl.querySelector(".x-total")?.offsetHeight ?? 24;
-    const signH = measureEl.querySelector(".x-sign")?.offsetHeight ?? 80;
-    const footerH = totalH + signH + 20;
+    const rowHeights = [...(measureEl.querySelector(".x-table tbody")?.rows ?? [])].map((tr) => tr.offsetHeight);
+    const footerH = measureEl.querySelector(".x-export-footer")?.offsetHeight ?? 120;
 
     const pages = computePdfRowPages(rowHeights, { titleH, theadH, footerH });
     const singlePage = pages.length === 1 && pages[0].start === 0 && pages[0].end === rowHeights.length;
@@ -973,9 +973,10 @@ function pdfExportOptions(estimate, paginated) {
       windowWidth: 720,
     },
     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["css", "legacy"], avoid: ["tr", ".x-sign"] },
   };
   if (paginated) {
-    opt.pagebreak = { mode: ["css", "legacy"], before: ".pdf-page-break-before", avoid: "tr" };
+    opt.pagebreak.before = ".pdf-page-break-before";
   }
   return opt;
 }
@@ -1441,4 +1442,3 @@ try {
   box.textContent = `Не удалось запустить приложение: ${msg}`;
   document.body.prepend(box);
 }
-

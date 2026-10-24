@@ -307,6 +307,11 @@ body.mode-mobile .page-tab { padding: 12px 10px; font-size: 16px; }
   break-inside: avoid;
   page-break-inside: avoid;
 }
+.pdf-export-root .x-table tbody tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.pdf-export-root .x-export-footer { display: flow-root; }
 .pdf-page-break-before {
   break-before: page;
   page-break-before: always;
