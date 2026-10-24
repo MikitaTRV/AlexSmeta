@@ -1,5 +1,5 @@
 const STORAGE_KEY = "alexsmeta.estimates.v3";
-const SITE_VERSION = "0.1.4";
+const SITE_VERSION = "0.1.5";
 const PAGES = ["works", "materials", "payments"];
 const DEFAULT_CURRENCY = "руб.";
 
@@ -886,15 +886,11 @@ function buildPaginatedPdfExportElement(estimate, pages) {
     let html = "";
     if (pageIndex === 0) html += `<h2 class="x-title">${escapeHtml(title)}</h2>`;
     html += buildExportTableHtml(estimate, page.start, page.end);
+    if (pageIndex === pages.length - 1) html += buildExportFooterHtml(estimate);
 
     pageEl.innerHTML = html;
     root.append(pageEl);
   });
-
-  const footerPage = document.createElement("div");
-  footerPage.className = "pdf-export-page pdf-page-break-before";
-  footerPage.innerHTML = buildExportFooterHtml(estimate);
-  root.append(footerPage);
 
   return root;
 }
