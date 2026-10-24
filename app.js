@@ -1,5 +1,5 @@
 const STORAGE_KEY = "alexsmeta.estimates.v3";
-const SITE_VERSION = "0.1.3";
+const SITE_VERSION = "0.1.4";
 const PAGES = ["works", "materials", "payments"];
 const DEFAULT_CURRENCY = "руб.";
 
@@ -886,17 +886,21 @@ function buildPaginatedPdfExportElement(estimate, pages) {
     let html = "";
     if (pageIndex === 0) html += `<h2 class="x-title">${escapeHtml(title)}</h2>`;
     html += buildExportTableHtml(estimate, page.start, page.end);
-    if (pageIndex === pages.length - 1) html += buildExportFooterHtml(estimate);
 
     pageEl.innerHTML = html;
     root.append(pageEl);
   });
 
+  const footerPage = document.createElement("div");
+  footerPage.className = "pdf-export-page pdf-page-break-before";
+  footerPage.innerHTML = buildExportFooterHtml(estimate);
+  root.append(footerPage);
+
   return root;
 }
 
 function computePdfRowPages(rowHeights, blocks) {
-  const { titleH, theadH, footerH } = blocks;
+  const { titleH, theadH } = blocks;
   const n = rowHeights.length;
   if (n === 0) return [{ start: 0, end: 0 }];
 
@@ -912,8 +916,7 @@ function computePdfRowPages(rowHeights, blocks) {
 
     while (i < n) {
       const rowH = rowHeights[i];
-      const extra = i === n - 1 ? footerH : 0;
-      if (used + rowH + extra > budget && used > 0) break;
+      if (used + rowH > budget && used > 0) break;
       used += rowH;
       i++;
     }
@@ -945,9 +948,12 @@ async function measurePdfRowPages(estimate) {
     const rowHeights = [...(measureEl.querySelector(".x-table tbody")?.rows ?? [])].map((tr) => tr.offsetHeight);
     const footerH = measureEl.querySelector(".x-export-footer")?.offsetHeight ?? 120;
 
-    const pages = computePdfRowPages(rowHeights, { titleH, theadH, footerH });
-    const singlePage = pages.length === 1 && pages[0].start === 0 && pages[0].end === rowHeights.length;
-    return singlePage ? null : pages;
+    const pages = computePdfRowPages(rowHeights, { titleH, theadH });
+    const workFitsSinglePage = pages.length === 1 && pages[0].start === 0 && pages[0].end === rowHeights.length;
+    const workHeight = rowHeights.reduce((sum, height) => sum + height, 0);
+    const firstPageBudget = PDF_PAGE_HEIGHT_PX - PDF_ROOT_VPAD_PX - titleH - theadH;
+    const everythingFitsSinglePage = workFitsSinglePage && workHeight + footerH <= firstPageBudget;
+    return everythingFitsSinglePage ? null : pages;
   } finally {
     host.remove();
   }
