@@ -1,5 +1,5 @@
 const STORAGE_KEY = "alexsmeta.estimates.v3";
-const SITE_VERSION = "0.1.2";
+const SITE_VERSION = "0.1.3";
 const PAGES = ["works", "materials", "payments"];
 const DEFAULT_CURRENCY = "руб.";
 
@@ -966,6 +966,8 @@ function pdfExportOptions(estimate, paginated) {
     image: { type: "jpeg", quality: 0.95 },
     html2canvas: {
       scale: 2,
+      x: 0,
+      y: 0,
       scrollX: 0,
       scrollY: 0,
       backgroundColor: "#ffffff",
