@@ -317,15 +317,15 @@ body.mode-mobile .page-tab { padding: 12px 10px; font-size: 16px; }
   page-break-before: always;
 }
 .pdf-export-root .x-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   text-align: center;
 }
 .pdf-export-root .x-subtitle {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  margin: 18px 0 8px;
+  margin: 12px 0 6px;
   text-align: left;
 }
 .pdf-export-root .x-table {
@@ -342,10 +342,11 @@ body.mode-mobile .page-tab { padding: 12px 10px; font-size: 16px; }
 .pdf-export-root .x-table th,
 .pdf-export-root .x-table td {
   border: 1px solid #111;
-  padding: 8px 10px;
+  padding: 6px 8px;
   vertical-align: top;
   text-align: left;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.3;
   color: #111;
 }
 .pdf-export-root .x-table th {
@@ -365,7 +366,7 @@ body.mode-mobile .page-tab { padding: 12px 10px; font-size: 16px; }
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   color: #111;
 }
@@ -373,8 +374,8 @@ body.mode-mobile .page-tab { padding: 12px 10px; font-size: 16px; }
 .pdf-export-root .x-sign {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 26px;
-  margin-top: 26px;
+  gap: 20px;
+  margin-top: 16px;
 }
 .pdf-export-root .x-sign .sline { border-bottom: 1px solid #bbb; height: 18px; }
 .pdf-export-root .x-sign .lbl { color: #444; font-size: 12px; margin-top: 6px; }

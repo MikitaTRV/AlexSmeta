@@ -1,5 +1,5 @@
 const STORAGE_KEY = "alexsmeta.estimates.v3";
-const SITE_VERSION = "0.1.5";
+const SITE_VERSION = "0.1.6";
 const PAGES = ["works", "materials", "payments"];
 const DEFAULT_CURRENCY = "руб.";
 
