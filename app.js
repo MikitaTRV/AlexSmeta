@@ -1,5 +1,5 @@
 const STORAGE_KEY = "alexsmeta.estimates.v3";
-const SITE_VERSION = "0.1.6";
+const SITE_VERSION = "0.1.7";
 const PAGES = ["works", "materials", "payments"];
 const DEFAULT_CURRENCY = "руб.";
 
@@ -112,6 +112,9 @@ function normalizeEstimate(e) {
         id: it.id ?? uid(),
         name: it.name ?? "",
         percent: clampToNumber(it.percent),
+        ...(it.amount !== undefined && it.amount !== null && it.amount !== "" && Number.isFinite(Number(it.amount))
+          ? { amount: clampToNumber(it.amount) }
+          : {}),
       }))
     : [];
   return {
@@ -217,7 +220,11 @@ function computeTotal(estimate) {
   return (estimate.items ?? []).reduce((acc, it) => acc + computeRowSum(it), 0);
 }
 
-function computeStageAmount(estimate, percent) {
+function computeStageAmount(estimate, stageOrPercent) {
+  if (stageOrPercent && typeof stageOrPercent === "object" && stageOrPercent.amount !== undefined) {
+    return clampToNumber(stageOrPercent.amount);
+  }
+  const percent = stageOrPercent && typeof stageOrPercent === "object" ? stageOrPercent.percent : stageOrPercent;
   return (computeTotal(estimate) * clampToNumber(percent)) / 100;
 }
 
@@ -226,7 +233,7 @@ function computePercentTotal(estimate) {
 }
 
 function computeStagesAmountTotal(estimate) {
-  return (estimate.paymentStages ?? []).reduce((acc, it) => acc + computeStageAmount(estimate, it.percent), 0);
+  return (estimate.paymentStages ?? []).reduce((acc, it) => acc + computeStageAmount(estimate, it), 0);
 }
 
 function qs(sel, root = document) {
@@ -520,7 +527,7 @@ function render(state, ui) {
   `;
   const paymentsBody = paymentsTable.querySelector("tbody");
   (current.paymentStages ?? []).forEach((it, idx) => {
-    const amount = computeStageAmount(current, it.percent);
+    const amount = computeStageAmount(current, it);
     const tr = document.createElement("tr");
     tr.dataset.rowid = it.id;
     tr.innerHTML = `
@@ -535,11 +542,17 @@ function render(state, ui) {
       <td class="percent">
         ${
           ui.editing
-            ? `<input type="number" step="any" min="0" inputmode="decimal" data-action="draft-stage-num" data-id="${it.id}" data-field="percent" value="${escapeAttr(formatDisplayNumber(it.percent ?? 0))}">`
+            ? `<input type="number" step="1" min="0" inputmode="numeric" data-action="draft-stage-num" data-id="${it.id}" data-field="percent" data-stage-percent="${it.id}" value="${escapeAttr(formatDisplayNumber(it.percent ?? 0))}">`
             : `<div class="cellText cellRight">${escapeHtml(formatDisplayNumber(it.percent ?? 0))}</div>`
         }
       </td>
-      <td class="sum amount"><div class="cellText cellRight" data-stage-sum="${it.id}">${formatDisplayNumber(amount)}</div></td>
+      <td class="sum amount">
+        ${
+          ui.editing
+            ? `<input type="number" step="any" min="0" inputmode="decimal" data-action="draft-stage-num" data-id="${it.id}" data-field="amount" data-stage-amount="${it.id}" value="${escapeAttr(formatDisplayNumber(amount))}">`
+            : `<div class="cellText cellRight" data-stage-sum="${it.id}">${formatDisplayNumber(amount)}</div>`
+        }
+      </td>
       ${
         ui.editing
           ? `<td class="actions"><button class="row-del" type="button" data-action="draft-delete-stage" data-id="${it.id}" title="Удалить">×</button></td>`
@@ -758,7 +771,7 @@ function buildExportPaymentsTableHtml(estimate) {
   const currency = estimate.currency ?? DEFAULT_CURRENCY;
   const rows = (estimate.paymentStages ?? [])
     .map((it, idx) => {
-      const amount = computeStageAmount(estimate, it.percent);
+      const amount = computeStageAmount(estimate, it);
       return `
       <tr>
         <td><div class="x-cell">${idx + 1}</div></td>
@@ -1150,8 +1163,20 @@ function main() {
   function updatePaymentAmountsInDom(draft) {
     const cur = draft.currency ?? DEFAULT_CURRENCY;
     (draft.paymentStages ?? []).forEach((st) => {
-      const el = document.querySelector(`[data-stage-sum="${CSS.escape(st.id)}"]`);
-      if (el) el.textContent = formatDisplayNumber(computeStageAmount(draft, st.percent));
+      if (st.amount !== undefined) {
+        const total = computeTotal(draft);
+        st.percent = total ? Math.round((clampToNumber(st.amount) / total) * 100) : 0;
+      }
+      const amountEl = document.querySelector(`[data-stage-sum="${CSS.escape(st.id)}"]`);
+      if (amountEl) amountEl.textContent = formatDisplayNumber(computeStageAmount(draft, st));
+      const amountInput = document.querySelector(`[data-stage-amount="${CSS.escape(st.id)}"]`);
+      if (amountInput instanceof HTMLInputElement && amountInput !== document.activeElement) {
+        amountInput.value = formatDisplayNumber(computeStageAmount(draft, st));
+      }
+      const percentInput = document.querySelector(`[data-stage-percent="${CSS.escape(st.id)}"]`);
+      if (percentInput instanceof HTMLInputElement && percentInput !== document.activeElement) {
+        percentInput.value = formatDisplayNumber(st.percent);
+      }
     });
     const paymentsFooter = document.querySelector('[data-slot="payments-footer"]');
     if (paymentsFooter) {
@@ -1407,7 +1432,15 @@ function main() {
       if (!id || !field) return;
       const item = ui.draft.paymentStages.find((it) => it.id === id);
       if (!item) return;
-      if (field === "percent") item.percent = clampToNumber(t.value);
+      if (field === "percent") {
+        item.percent = clampToNumber(t.value);
+        delete item.amount;
+      }
+      if (field === "amount") {
+        item.amount = clampToNumber(t.value);
+        const total = computeTotal(ui.draft);
+        item.percent = total ? Math.round((item.amount / total) * 100) : 0;
+      }
       updatePaymentAmountsInDom(ui.draft);
     }
   });

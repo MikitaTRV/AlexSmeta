@@ -446,7 +446,8 @@ table.smeta col.col-amount {
 }
 table.smeta td.percent,
 table.smeta td.amount { text-align: right; }
-table.smeta td.percent input { text-align: right; }
+table.smeta td.percent input,
+table.smeta td.amount input { text-align: right; }
 table.smeta th {
   background: #f3f3f3;
   font-weight: 600;
